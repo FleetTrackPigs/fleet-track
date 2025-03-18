@@ -1,5 +1,5 @@
 import express from 'express';
-import { login, logout, getCurrentUser } from '../controllers/authController';
+import { login, logout, getCurrentUser, register } from '../controllers/authController';
 import { authenticate } from '../middleware/auth';
 import { body } from 'express-validator';
 
@@ -10,6 +10,15 @@ router.post('/login', [
   body('username').notEmpty().withMessage('Username is required'),
   body('password').notEmpty().withMessage('Password is required')
 ], login);
+
+// Register endpoint
+router.post('/register', [
+  body('name').notEmpty().withMessage('Name is required'),
+  body('username').notEmpty().withMessage('Username is required'),
+  body('password').notEmpty().withMessage('Password is required')
+    .isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('role').optional().isIn(['admin', 'driver']).withMessage('Role must be admin or driver')
+], register);
 
 // Logout endpoint
 router.post('/logout', logout);

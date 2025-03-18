@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
-import { LoginRequest, LoginResponse } from '../types/auth';
+import { LoginRequest, LoginResponse, RegisterRequest } from '../types/auth';
 
 export const login = async (req: Request<{}, {}, LoginRequest>, res: Response) => {
   try {
@@ -42,6 +42,75 @@ export const login = async (req: Request<{}, {}, LoginRequest>, res: Response) =
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Internal server error during login' });
+  }
+};
+
+export const register = async (req: Request<{}, {}, RegisterRequest>, res: Response) => {
+  try {
+    const { name, lastName, username, password, role = 'driver' } = req.body;
+
+    // Validar campos requeridos
+    if (!name || !username || !password) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+
+    // Verificar si el usuario ya existe
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .single();
+
+    if (existingUser) {
+      return res.status(409).json({ message: 'Username already exists' });
+    }
+
+    // Crear usuario en Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: username, // Usando username como email
+      password: password,
+    });
+
+    if (authError || !authData.user) {
+      return res.status(400).json({ message: 'Error creating user', error: authError });
+    }
+
+    // Crear perfil de usuario en nuestra tabla de users
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .insert([
+        {
+          id: authData.user.id,
+          name,
+          lastName,
+          username,
+          role,
+          status: 'active'
+        }
+      ])
+      .select()
+      .single();
+
+    if (userError) {
+      // Rollback: Eliminar el usuario de auth si falla la creación del perfil
+      await supabase.auth.admin.deleteUser(authData.user.id);
+      return res.status(400).json({ message: 'Error creating user profile', error: userError });
+    }
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      user: {
+        id: userData.id,
+        name: userData.name,
+        lastName: userData.lastName,
+        username: userData.username,
+        role: userData.role,
+        status: userData.status
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Internal server error during registration' });
   }
 };
 

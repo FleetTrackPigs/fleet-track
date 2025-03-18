@@ -1,28 +1,6 @@
-
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { AuthContextType, User, UserRole } from '@/types/auth';
-
-// Datos de prueba para simular la autenticación
-const MOCK_USERS = [
-  {
-    id: '1',
-    name: 'Carlos',
-    lastName: 'Rodríguez',
-    username: 'admin',
-    password: 'admin',
-    role: 'admin' as UserRole,
-    status: 'active' as const
-  },
-  {
-    id: '2',
-    name: 'Juan',
-    lastName: 'Pérez',
-    username: 'driver',
-    password: 'driver',
-    role: 'driver' as UserRole,
-    status: 'active' as const
-  }
-];
+import { AuthContextType, User } from '@/types/auth';
+import { authApi } from '@/services/api';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -33,25 +11,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    // Simulando una verificación de credenciales
-    const foundUser = MOCK_USERS.find(
-      u => u.username === username && u.password === password
-    );
+    try {
+      const { data, error } = await authApi.login(username, password);
 
-    if (foundUser) {
-      // Excluimos la contraseña antes de almacenar
-      const { password: _, ...userWithoutPassword } = foundUser;
-      setUser(userWithoutPassword);
-      localStorage.setItem('flotaUser', JSON.stringify(userWithoutPassword));
+      if (error || !data) {
+        console.error('Login error:', error);
+        return false;
+      }
+
+      setUser(data.user);
+      localStorage.setItem('flotaUser', JSON.stringify(data.user));
+      localStorage.setItem('flotaToken', data.token);
       return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
     }
-
-    return false;
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem('flotaUser');
+    try {
+      authApi.logout();
+    } finally {
+      setUser(null);
+      localStorage.removeItem('flotaUser');
+      localStorage.removeItem('flotaToken');
+    }
   };
 
   return (
