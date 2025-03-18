@@ -1,0 +1,20 @@
+export type UserRole = 'admin' | 'driver';
+
+export interface User {
+  id: string;
+  name: string;
+  lastName?: string;
+  username: string;
+  role: UserRole;
+  status: 'active' | 'inactive';
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  user: User;
+  token: string;
+} 
