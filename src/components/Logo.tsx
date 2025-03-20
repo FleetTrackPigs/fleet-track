@@ -16,7 +16,7 @@ const Logo = ({ size = 'md', color = 'text-white' }: LogoProps) => {
   return (
     <div className={`flex items-center gap-2 flota-logo ${color}`}>
       <Car className="h-6 w-6" />
-      <span className={sizeClass}>FleetFunster</span>
+      <span className={sizeClass}>Fleet Track</span>
     </div>
   );
 };

@@ -1,30 +1,27 @@
 import { Request, Response } from 'express';
 import { supabase } from '../config/supabase';
 import { LoginRequest, LoginResponse, RegisterRequest } from '../types/auth';
+import logger from '../utils/logger';
+import crypto from 'crypto';
 
-export const login = async (req: Request<{}, {}, LoginRequest>, res: Response) => {
+export const login = async (req: Request<object, object, LoginRequest>, res: Response) => {
   try {
     const { username, password } = req.body;
 
-    // Authenticate with Supabase
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: username, // Assuming username is email in Supabase
-      password
-    });
-
-    if (error || !data.user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // Get user info from our users table
+    // Get user from our users table by username or email
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('*')
-      .eq('id', data.user.id)
+      .or(`username.eq."${username}",email.eq."${username}"`)
       .single();
 
     if (userError || !userData) {
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    // Check if passwords match
+    if (userData.password !== password) {
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     // Check if user is active
@@ -32,10 +29,21 @@ export const login = async (req: Request<{}, {}, LoginRequest>, res: Response) =
       return res.status(403).json({ message: 'Account is inactive' });
     }
 
-    // Create response
+    // Create response (in a real app, you would generate a JWT token here)
+    const fakeToken = crypto.randomBytes(16).toString('hex');
+    
     const response: LoginResponse = {
-      user: userData,
-      token: data.session.access_token
+      user: {
+        id: userData.id,
+        name: userData.name,
+        lastName: userData.lastName,
+        username: userData.username,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role,
+        status: userData.status
+      },
+      token: fakeToken
     };
 
     res.status(200).json(response);
@@ -45,72 +53,102 @@ export const login = async (req: Request<{}, {}, LoginRequest>, res: Response) =
   }
 };
 
-export const register = async (req: Request<{}, {}, RegisterRequest>, res: Response) => {
+// Helper function to create error responses
+const createErrorResponse = (message: string, details?: any) => {
+  const error: any = new Error(message);
+  error.statusCode = 400;
+  error.details = details;
+  return error;
+};
+
+export const register = async (req: Request<object, object, RegisterRequest>, res: Response) => {
   try {
-    const { name, lastName, username, password, role = 'driver' } = req.body;
+    const { name, lastName, username, email, password, role = 'driver' } = req.body;
 
-    // Validar campos requeridos
-    if (!name || !username || !password) {
-      return res.status(400).json({ message: 'Missing required fields' });
+    // Basic validation
+    if (!name || !username || !email || !password) {
+      return res.status(400).json({ 
+        message: 'Missing required fields', 
+        details: { 
+          required: ['name', 'username', 'email', 'password'],
+          received: Object.keys(req.body)
+        } 
+      });
     }
 
-    // Verificar si el usuario ya existe
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .single();
-
-    if (existingUser) {
-      return res.status(409).json({ message: 'Username already exists' });
+    if (password.length < 6) {
+      return res.status(400).json({ 
+        message: 'Password too short',
+        details: { minLength: 6 } 
+      });
     }
 
-    // Crear usuario en Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: username, // Usando username como email
-      password: password,
-    });
+    try {
+      // Generate a unique ID
+      const userId = crypto.randomUUID();
+      
+      // Log what we're about to insert
+      console.log('Inserting user:', {
+        id: userId,
+        name,
+        lastName,
+        username,
+        email,
+        password: 'HIDDEN',
+        role,
+        status: 'active'
+      });
 
-    if (authError || !authData.user) {
-      return res.status(400).json({ message: 'Error creating user', error: authError });
-    }
-
-    // Crear perfil de usuario en nuestra tabla de users
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .insert([
-        {
-          id: authData.user.id,
+      // Insert user directly
+      const { error } = await supabase
+        .from('users')
+        .insert({
+          id: userId,
           name,
           lastName,
           username,
+          email,
+          password,
+          role,
+          status: 'active'
+        });
+
+      if (error) {
+        console.error('Database error:', error);
+        
+        return res.status(400).json({
+          message: 'Error creating user',
+          details: error
+        });
+      }
+
+      return res.status(201).json({
+        message: 'User created successfully',
+        user: {
+          id: userId,
+          name,
+          lastName,
+          username,
+          email,
+          password,
           role,
           status: 'active'
         }
-      ])
-      .select()
-      .single();
-
-    if (userError) {
-      // Rollback: Eliminar el usuario de auth si falla la creación del perfil
-      await supabase.auth.admin.deleteUser(authData.user.id);
-      return res.status(400).json({ message: 'Error creating user profile', error: userError });
+      });
+    } catch (error) {
+      console.error('Error during user creation:', error);
+      
+      return res.status(500).json({
+        message: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error : undefined
+      });
     }
-
-    res.status(201).json({
-      message: 'User registered successfully',
-      user: {
-        id: userData.id,
-        name: userData.name,
-        lastName: userData.lastName,
-        username: userData.username,
-        role: userData.role,
-        status: userData.status
-      }
-    });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ message: 'Internal server error during registration' });
+    console.error('Unexpected error:', error);
+    
+    return res.status(500).json({
+      message: 'Internal server error'
+    });
   }
 };
 

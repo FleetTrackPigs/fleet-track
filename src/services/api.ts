@@ -46,6 +46,7 @@ export const authApi = {
 
   register: (data: {
     name: string;
+    email: string;
     lastName?: string;
     username: string;
     password: string;

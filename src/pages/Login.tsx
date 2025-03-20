@@ -7,9 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Key, UserPlus, LogIn } from 'lucide-react';
+import { AlertCircle, Key, UserPlus, LogIn, Check } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { authApi } from '@/services/api';
+import { useToast } from '@/hooks/use-toast';
 
 const Login = () => {
   // Login state
@@ -22,6 +23,7 @@ const Login = () => {
   const [registerName, setRegisterName] = useState('');
   const [registerLastName, setRegisterLastName] = useState('');
   const [registerUsername, setRegisterUsername] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
   const [registerError, setRegisterError] = useState('');
@@ -29,6 +31,7 @@ const Login = () => {
   
   const { login, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Redirigir a la página correcta si ya está autenticado
   useEffect(() => {
@@ -72,7 +75,7 @@ const Login = () => {
     e.preventDefault();
     
     // Validaciones
-    if (!registerName || !registerUsername || !registerPassword) {
+    if (!registerName || !registerUsername || !registerEmail || !registerPassword) {
       setRegisterError('Por favor, completa los campos requeridos');
       return;
     }
@@ -87,6 +90,13 @@ const Login = () => {
       return;
     }
 
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(registerEmail)) {
+      setRegisterError('Por favor, introduce un email válido');
+      return;
+    }
+
     setRegisterError('');
     setIsRegistering(true);
 
@@ -95,6 +105,7 @@ const Login = () => {
         name: registerName,
         lastName: registerLastName,
         username: registerUsername,
+        email: registerEmail,
         password: registerPassword,
         role: 'driver', // Por defecto, los nuevos usuarios son conductores
       });
@@ -104,17 +115,52 @@ const Login = () => {
         return;
       }
 
-      // Registro exitoso
+      // Registro exitoso - mostrar toast y preparar login
+      toast({
+        title: "¡Registro exitoso!",
+        description: (
+          <div className="flex items-center">
+            <Check className="h-4 w-4 text-green-500 mr-2" />
+            <span>Tu cuenta ha sido creada correctamente</span>
+          </div>
+        ),
+        variant: "default",
+        duration: 3000,
+      });
+
+      // Set login credentials
       setUsername(registerUsername);
       setPassword(registerPassword);
-      // Resetear el formulario
+      
+      // Reset form
       setRegisterName('');
       setRegisterLastName('');
       setRegisterUsername('');
+      setRegisterEmail('');
       setRegisterPassword('');
       setRegisterConfirmPassword('');
-      // Cambiar a la pestaña de login
+      
+      // Switch to login tab and attempt auto-login
       document.getElementById('login-tab')?.click();
+      
+      // Auto-login after a short delay
+      setTimeout(async () => {
+        try {
+          const success = await login(registerUsername, registerPassword);
+          
+          if (success) {
+            toast({
+              title: "Inicio de sesión automático",
+              description: "Has iniciado sesión correctamente",
+              variant: "default",
+              duration: 2000,
+            });
+          }
+        } catch (loginError) {
+          console.error('Auto-login failed:', loginError);
+        }
+      }, 500);
+      
     } catch (error) {
       setRegisterError('Ha ocurrido un error al registrar el usuario');
       console.error(error);
@@ -258,12 +304,24 @@ const Login = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="registerUsername">Usuario <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="registerUsername">Nombre de usuario <span className="text-red-500">*</span></Label>
                   <Input
                     id="registerUsername"
-                    placeholder="Usuario"
+                    placeholder="Nombre de usuario"
                     value={registerUsername}
                     onChange={(e) => setRegisterUsername(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="registerEmail">Email <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="registerEmail"
+                    type="email"
+                    placeholder="correo@ejemplo.com"
+                    value={registerEmail}
+                    onChange={(e) => setRegisterEmail(e.target.value)}
                     required
                   />
                 </div>
