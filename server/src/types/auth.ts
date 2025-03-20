@@ -5,6 +5,7 @@ export interface User {
   name: string;
   lastName?: string;
   username: string;
+  email: string;
   role: UserRole;
   status: 'active' | 'inactive';
 }
@@ -23,6 +24,7 @@ export interface RegisterRequest {
   name: string;
   lastName?: string;
   username: string;
+  email: string;
   password: string;
   role?: UserRole;
 } 
