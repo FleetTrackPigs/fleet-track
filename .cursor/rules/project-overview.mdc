@@ -1,0 +1,71 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Fleet Track Project Overview
+
+This document outlines the structure and current state of the Fleet Track application, designed to guide future development.
+
+## Project Structure
+
+The project is divided into a frontend (React client) and a backend (Node.js/Express server).
+
+**Backend (`server/` directory):**
+
+*   **Entry Point:** `[server/src/index.ts](mdc:server/src/index.ts)` - Sets up the Express server and middleware.
+*   **Configuration:** `[server/src/config/supabase.ts](mdc:server/src/config/supabase.ts)` - Initializes the Supabase client.
+*   **Controllers:** `[server/src/controllers/](mdc:server/src/controllers)` - Handle request logic.
+    *   `[authController.ts](mdc:server/src/controllers/authController.ts)`: Manages user registration and login.
+    *   `[vehicleController.ts](mdc:server/src/controllers/vehicleController.ts)`: (Partially implemented) Manages vehicle CRUD operations.
+*   **Routes:** `[server/src/routes/](mdc:server/src/routes)` - Define API endpoints.
+    *   `[authRoutes.ts](mdc:server/src/routes/authRoutes.ts)`: Authentication endpoints.
+    *   `[vehicleRoutes.ts](mdc:server/src/routes/vehicleRoutes.ts)`: Vehicle endpoints.
+*   **Types:** `[server/src/types/](mdc:server/src/types)` - Defines TypeScript interfaces.
+    *   `[auth.ts](mdc:server/src/types/auth.ts)`: User and authentication related types.
+    *   `[fleet.ts](mdc:server/src/types/fleet.ts)`: Vehicle and driver related types.
+*   **Middleware:** `[server/src/middleware/](mdc:server/src/middleware)` - Handles request processing steps.
+    *   `[errorHandler.ts](mdc:server/src/middleware/errorHandler.ts)`: Centralized error handling.
+*   **Utilities:** `[server/src/utils/](mdc:server/src/utils)`
+    *   `[logger.ts](mdc:server/src/utils/logger.ts)`: Logging utility (Winston).
+
+**Frontend (`client/` or root `/src` directory):**
+
+*   **Main Entry:** `[src/main.tsx](mdc:src/main.tsx)` - Renders the root application component.
+*   **App Component:** `[src/App.tsx](mdc:src/App.tsx)` - Sets up routing and global components like `Toaster`.
+*   **Pages:** `[src/pages/](mdc:src/pages)` - Contain the main views.
+    *   `[Login.tsx](mdc:src/pages/Login.tsx)`: Handles user login and registration forms.
+*   **Components:** `[src/components/](mdc:src/components)` - Reusable UI elements (e.g., `[ui/](mdc:src/components/ui)` for Shadcn components).
+*   **Context:** `[src/contexts/](mdc:src/contexts)`
+    *   `[AuthContext.tsx](mdc:src/contexts/AuthContext.tsx)`: Manages global authentication state.
+*   **Services:** `[src/services/](mdc:src/services)`
+    *   `[api.ts](mdc:src/services/api.ts)`: Contains functions for making backend API calls (e.g., `authApi`).
+*   **Hooks:** `[src/hooks/](mdc:src/hooks)`
+    *   `[use-toast.ts](mdc:src/hooks/use-toast.ts)`: Custom hook for displaying toast notifications.
+*   **Types:** `[src/types/](mdc:src/types)` - Frontend-specific type definitions.
+    *   `[auth.ts](mdc:src/types/auth.ts)`: User and authentication context types.
+    *   `[fleet.ts](mdc:src/types/fleet.ts)`: Vehicle and driver types.
+
+## Current Functionality
+
+*   **User Registration:** Users can register with name, username, email, and password. Registration creates a record directly in the `users` table (bypassing Supabase Auth).
+*   **User Login:** Users can log in using their username/email and password. Authentication checks credentials directly against the `users` table.
+*   **Basic Frontend:** A login/registration page with form validation and toast notifications for success/failure.
+*   **Backend API:** Endpoints for `/auth/register` and `/auth/login`. Basic structure for `/vehicles` endpoints exists but is not fully implemented.
+*   **Error Handling:** Centralized error handling middleware on the backend and basic error display on the frontend.
+*   **Logging:** Winston logger configured on the backend.
+
+## Potential Next Steps
+
+*   **Implement Vehicle CRUD:** Complete the backend endpoints and frontend UI for creating, reading, updating, and deleting vehicles.
+*   **Implement Driver Management:** Add functionality to manage drivers (similar to vehicles).
+*   **Assign Vehicles to Drivers:** Create logic and UI to link vehicles with drivers.
+*   **Role-Based Access Control (RBAC):**
+    *   Implement middleware on the backend to protect routes based on user roles (`admin`, `driver`).
+    *   Create separate dashboards/views for `admin` and `driver` roles on the frontend using `[src/components/layout/AuthLayout.tsx](mdc:src/components/layout/AuthLayout.tsx)`.
+*   **Password Hashing:** Implement password hashing on the backend (e.g., using `bcrypt`) instead of storing plain text passwords.
+*   **JWT Authentication:** Replace the current fake token generation with proper JWT (JSON Web Token) authentication for more secure session management.
+*   **Admin Dashboard:** Develop features for administrators, such as user management, vehicle overview, and assignment management.
+*   **Driver Dashboard:** Develop features for drivers, such as viewing their assigned vehicle and related information.
+*   **Real-time Updates:** Consider using Supabase Realtime for features like live location tracking or status updates.
+*   **Refine UI/UX:** Improve the overall user interface and experience.
