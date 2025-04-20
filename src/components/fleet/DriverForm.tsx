@@ -1,83 +1,192 @@
-
-import { useState } from "react";
-import { useFleet } from "@/contexts/FleetContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Driver } from "@/types/fleet";
+import { useState, useEffect } from 'react'
+import { useFleet } from '@/contexts/FleetContext'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { Driver } from '@/types/fleet'
+import { authApi } from '@/services/api'
+import { useAuth } from '@/contexts/AuthContext'
+import { useToast } from '@/components/ui/use-toast'
 
 interface DriverFormProps {
-  driver?: Driver;
-  onSave: () => void;
+  driver?: Driver
+  onSave: () => void
 }
 
 export function DriverForm({ driver, onSave }: DriverFormProps) {
-  const { addDriver, updateDriver } = useFleet();
-  const isEditing = !!driver;
+  const { addDriver, updateDriver } = useFleet()
+  const { token } = useAuth()
+  const { toast } = useToast()
+  const isEditing = !!driver
+  const [availableUsers, setAvailableUsers] = useState<
+    Array<{ id: string; username: string; email: string }>
+  >([])
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
 
   const [formData, setFormData] = useState({
-    name: driver?.name || "",
-    lastName: driver?.lastName || "",
-    username: driver?.username || "",
-    password: "", // Solo para nuevos conductores
-    status: driver?.status || "active"
-  });
+    userId: driver?.userId || '',
+    name: driver?.name || '',
+    lastName: driver?.lastName || '',
+    phone: driver?.phone || '',
+    license_type: driver?.license_type || '',
+    license_expiry: driver?.license_expiry || '',
+    status: driver?.status || 'active'
+  })
 
   const [errors, setErrors] = useState({
-    name: "",
-    lastName: "",
-    username: "",
-    password: "",
-  });
+    userId: '',
+    name: '',
+    lastName: ''
+  })
+
+  // Load available users with driver role who don't already have a driver profile
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!isEditing && token) {
+        setIsLoadingUsers(true)
+        try {
+          const response = await authApi.getDriverUsers(token)
+          if (response.data?.data) {
+            setAvailableUsers(
+              response.data.data as Array<{
+                id: string
+                username: string
+                email: string
+              }>
+            )
+          } else if (response.error) {
+            toast({
+              title: 'Error',
+              description: 'No se pudieron cargar los usuarios disponibles',
+              variant: 'destructive'
+            })
+          }
+        } catch (error) {
+          console.error('Error loading available users:', error)
+          toast({
+            title: 'Error',
+            description: 'No se pudieron cargar los usuarios disponibles',
+            variant: 'destructive'
+          })
+        } finally {
+          setIsLoadingUsers(false)
+        }
+      }
+    }
+
+    fetchUsers()
+    // Only run this once when the component mounts or when isEditing changes
+  }, [isEditing, token, toast])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+
     // Clear error when field is edited
     if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
+      setErrors(prev => ({ ...prev, [name]: '' }))
     }
-  };
+  }
 
   const handleStatusChange = (value: string) => {
-    setFormData(prev => ({ ...prev, status: value as "active" | "inactive" }));
-  };
+    setFormData(prev => ({ ...prev, status: value as 'active' | 'inactive' }))
+  }
+
+  const handleUserChange = (value: string) => {
+    setFormData(prev => ({ ...prev, userId: value }))
+
+    // Find selected user to auto-fill name and lastName if available
+    const selectedUser = availableUsers.find(user => user.id === value)
+    if (selectedUser) {
+      const nameParts = selectedUser.username.split('.')
+      if (nameParts.length > 1) {
+        // Assuming username format is "firstname.lastname"
+        setFormData(prev => ({
+          ...prev,
+          userId: value,
+          name: nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1),
+          lastName: nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1)
+        }))
+      }
+    }
+
+    // Clear error
+    setErrors(prev => ({ ...prev, userId: '' }))
+  }
 
   const validateForm = () => {
     const newErrors = {
-      name: formData.name ? "" : "El nombre es obligatorio",
-      lastName: formData.lastName ? "" : "Los apellidos son obligatorios",
-      username: formData.username ? "" : "El nombre de usuario es obligatorio",
-      password: !isEditing && !formData.password ? "La contraseña es obligatoria" : "",
-    };
+      userId: formData.userId ? '' : 'Debe seleccionar un usuario',
+      name: formData.name ? '' : 'El nombre es obligatorio',
+      lastName: formData.lastName ? '' : 'Los apellidos son obligatorios'
+    }
 
-    setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error);
-  };
+    setErrors(newErrors)
+    return !Object.values(newErrors).some(error => error)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
+    e.preventDefault()
+
+    if (!validateForm()) return
 
     if (isEditing && driver) {
-      // No enviamos la contraseña si está vacía para mantener la anterior
-      const dataToUpdate = {...formData};
-      if (!dataToUpdate.password) {
-        delete dataToUpdate.password;
-      }
-      updateDriver(driver.id, dataToUpdate);
+      // Only update driver details
+      const { userId, ...updateData } = formData
+      updateDriver(driver.id, updateData)
     } else {
-      addDriver(formData);
+      // Create new driver with user association
+      addDriver(formData)
     }
-    
-    onSave();
-  };
+
+    onSave()
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {!isEditing && (
+        <div className="space-y-2">
+          <Label htmlFor="userId">Usuario</Label>
+          <Select
+            value={formData.userId}
+            onValueChange={handleUserChange}
+            disabled={isLoadingUsers || isEditing}
+          >
+            <SelectTrigger>
+              <SelectValue
+                placeholder={
+                  isLoadingUsers
+                    ? 'Cargando usuarios...'
+                    : 'Selecciona un usuario'
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {availableUsers.map(user => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.username} ({user.email})
+                </SelectItem>
+              ))}
+              {availableUsers.length === 0 && !isLoadingUsers && (
+                <SelectItem value="none" disabled>
+                  No hay usuarios disponibles
+                </SelectItem>
+              )}
+            </SelectContent>
+          </Select>
+          {errors.userId && (
+            <p className="text-xs text-red-500">{errors.userId}</p>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">Nombre</Label>
@@ -90,7 +199,7 @@ export function DriverForm({ driver, onSave }: DriverFormProps) {
           />
           {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="lastName">Apellidos</Label>
           <Input
@@ -100,61 +209,70 @@ export function DriverForm({ driver, onSave }: DriverFormProps) {
             value={formData.lastName}
             onChange={handleChange}
           />
-          {errors.lastName && <p className="text-xs text-red-500">{errors.lastName}</p>}
+          {errors.lastName && (
+            <p className="text-xs text-red-500">{errors.lastName}</p>
+          )}
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="username">Usuario</Label>
+          <Label htmlFor="phone">Teléfono</Label>
           <Input
-            id="username"
-            name="username"
-            placeholder="Ej: juan.perez"
-            value={formData.username}
+            id="phone"
+            name="phone"
+            placeholder="Ej: +34612345678"
+            value={formData.phone}
             onChange={handleChange}
           />
-          {errors.username && <p className="text-xs text-red-500">{errors.username}</p>}
         </div>
-        
+
         <div className="space-y-2">
-          <Label htmlFor="password">Contraseña {isEditing && "(Dejar en blanco para mantener)"}</Label>
+          <Label htmlFor="license_type">Tipo de Licencia</Label>
           <Input
-            id="password"
-            name="password"
-            type="password"
-            placeholder={isEditing ? "••••••••" : "Contraseña"}
-            value={formData.password}
+            id="license_type"
+            name="license_type"
+            placeholder="Ej: B, C, D..."
+            value={formData.license_type}
             onChange={handleChange}
           />
-          {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
         </div>
       </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="status">Estado</Label>
-        <Select 
-          value={formData.status}
-          onValueChange={handleStatusChange}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Selecciona un estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Activo</SelectItem>
-            <SelectItem value="inactive">Inactivo</SelectItem>
-          </SelectContent>
-        </Select>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="license_expiry">Fecha de Caducidad</Label>
+          <Input
+            id="license_expiry"
+            name="license_expiry"
+            type="date"
+            value={formData.license_expiry}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="status">Estado</Label>
+          <Select value={formData.status} onValueChange={handleStatusChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecciona un estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Activo</SelectItem>
+              <SelectItem value="inactive">Inactivo</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
-      
+
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onSave}>
           Cancelar
         </Button>
         <Button type="submit">
-          {isEditing ? "Actualizar" : "Añadir"} Conductor
+          {isEditing ? 'Actualizar' : 'Añadir'} Conductor
         </Button>
       </div>
     </form>
-  );
+  )
 }
