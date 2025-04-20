@@ -1,0 +1,57 @@
+---
+description: conventions to follow when interacting with the PostgreSQL database via Supabase in the backend
+globs: 
+alwaysApply: false
+---
+# Database Interaction Conventions
+
+This rule outlines the naming conventions to follow when interacting with the PostgreSQL database via Supabase in the backend.
+
+## Column Naming
+
+*   **Database:** The PostgreSQL database uses **lowercase snake_case** for column names (e.g., `userid`, `lastname`, `vehicleid`, `license_type`, `created_at`). This is standard PostgreSQL practice.
+*   **TypeScript Interfaces (Database Models):** Interfaces representing database table structures (like `Driver` in [`server/src/types/driver.ts`](mdc:server/src/types/driver.ts) or `Vehicle` in [`server/src/types/vehicle.ts`](mdc:server/src/types/vehicle.ts)) **MUST** use the exact lowercase column names defined in the database schema.
+
+## API and Controller Logic
+
+*   **API Request/Response Types:** Interfaces used for API request bodies (`Create*Request`, `Update*Request` in `server/src/types/`) or response bodies can use **camelCase** (e.g., `userId`, `lastName`) for consistency with frontend JavaScript conventions.
+*   **Controller Mapping:** Backend controllers (e.g., [`server/src/controllers/driverController.ts`](mdc:server/src/controllers/driverController.ts)) are responsible for **mapping** between the camelCase properties used in API requests/responses and the lowercase column names required by the database.
+    *   **Inserts/Updates:** When inserting or updating data using the Supabase client, explicitly map the camelCase fields from the request body to their corresponding lowercase database column names. **Avoid using the spread operator (`...`)** directly on request bodies for database operations, as it can lead to mismatches if property names differ from column names.
+    *   **Selects:** When selecting data, use Supabase's ability to alias columns if needed (e.g., `select('userid:userId, ...')`), but generally, prefer selecting the lowercase names and letting the `Driver` or `Vehicle` type handle the structure. Foreign key relations should also use the lowercase column names (e.g., `user:userid (...)`).
+
+## Example (Driver Creation)
+
+```typescript
+// In server/src/controllers/driverController.ts
+
+import { CreateDriverRequest } from '../types/driver'; // Uses camelCase: userId, lastName
+
+// ...
+
+export const createDriver = async (req: Request, res: Response) => {
+  const driverData: CreateDriverRequest = req.body; // Contains camelCase fields
+
+  try {
+    // ... validation ...
+
+    // Explicit mapping from camelCase (driverData) to lowercase (database columns)
+    const { data: newDriver, error } = await supabase
+      .from('drivers')
+      .insert([{
+        userid: driverData.userId, // Map userId -> userid
+        name: driverData.name,
+        lastname: driverData.lastName, // Map lastName -> lastname
+        phone: driverData.phone || null,
+        license_type: driverData.license_type || null, // Map license_type -> license_type (snake_case example)
+        license_expiry: driverData.license_expiry || null,
+        status: driverData.status || 'active'
+      }])
+      .select( /* ... select with lowercase names ... */ )
+      .single();
+
+    // ... rest of the function ...
+  } catch // ...
+}
+```
+
+Following these conventions will prevent runtime errors caused by mismatched column names between the application code and the database schema.
