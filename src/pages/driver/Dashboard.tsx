@@ -24,7 +24,7 @@ import { toast } from '@/hooks/use-toast'
 import { vehicleReviewsApi } from '@/services/api'
 
 const DriverDashboard = () => {
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const { getDriverVehicle, drivers, vehicles } = useFleet()
 
   // State for finding the current driver
@@ -98,7 +98,7 @@ const DriverDashboard = () => {
 
   // Submit vehicle review
   const submitReview = async () => {
-    if (!assignedVehicle || !currentDriverId) {
+    if (!assignedVehicle || !currentDriverId || !token) {
       toast({
         title: 'Error',
         description: 'No tienes un vehículo asignado para revisar.',
@@ -111,11 +111,14 @@ const DriverDashboard = () => {
       setReviewSubmitting(true)
 
       // Submit review to API
-      await vehicleReviewsApi.create({
-        driver_id: currentDriverId,
-        vehicle_id: assignedVehicle.id,
-        ...review
-      })
+      await vehicleReviewsApi.create(
+        {
+          driver_id: currentDriverId,
+          vehicle_id: assignedVehicle.id,
+          ...review
+        },
+        token
+      )
 
       setReviewCompleted(true)
       toast({

@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useFleet } from '@/contexts/FleetContext'
+import { useAuth } from '@/contexts/AuthContext'
 import AdminLayout from '@/components/layout/AdminLayout'
 import {
   Card,
@@ -45,6 +46,7 @@ type VehicleStatus = 'available' | 'assigned' | 'maintenance'
 
 const AdminDashboard = () => {
   const { drivers, vehicles, getAvailableVehicles } = useFleet()
+  const { token } = useAuth()
   const navigate = useNavigate()
   const [vehiclesInMaintenance, setVehiclesInMaintenance] = useState<
     MaintenanceVehicle[]
@@ -105,10 +107,13 @@ const AdminDashboard = () => {
   // Fetch vehicles requiring maintenance
   useEffect(() => {
     const fetchMaintenanceVehicles = async () => {
+      if (!token) return
+
       try {
         setLoading(true)
-        const data =
-          (await vehicleReviewsApi.getVehiclesRequiringMaintenance()) as MaintenanceVehicle[]
+        const data = (await vehicleReviewsApi.getVehiclesRequiringMaintenance(
+          token
+        )) as MaintenanceVehicle[]
         setVehiclesInMaintenance(data)
       } catch (error) {
         console.error('Error fetching maintenance vehicles:', error)
@@ -118,7 +123,7 @@ const AdminDashboard = () => {
     }
 
     fetchMaintenanceVehicles()
-  }, [])
+  }, [token])
 
   return (
     <AdminLayout>
