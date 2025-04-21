@@ -37,7 +37,7 @@ _Here's a sneak peek of FleetTrack in action!_
 
 **Live Map View:**
 
-![Live Map](https://github.com/user-attachments/assets/199f3cc3-573a-4c56-aaf5-d373488b7b28)
+![Live Map](https://github.com/user-attachments/assets/fd5f6e7e-d100-4758-91ae-6b7eaf7c317c)
 
 ---
 
