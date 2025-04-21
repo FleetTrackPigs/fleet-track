@@ -68,4 +68,5 @@ router.post(
   createVehicleReview
 )
 
+export { router as vehicleReviewsRouter }
 export default router

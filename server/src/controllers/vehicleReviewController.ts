@@ -159,20 +159,61 @@ export const getVehiclesRequiringMaintenance = async (
   res: Response
 ) => {
   try {
-    // Use a SQL query to find vehicles with problems in their latest review
-    const { data, error } = await supabase.rpc(
-      'get_vehicles_requiring_maintenance'
-    )
+    // Instead of using RPC, we'll query for vehicles with issues in their latest review
+    // First, get all vehicle reviews with issues
+    const { data: reviewsWithIssues, error: reviewsError } = await supabase
+      .from('vehicle_reviews')
+      .select('id, vehicle_id, review_date, issues_noted')
+      .not('issues_noted', 'is', null)
+      .order('review_date', { ascending: false })
 
-    if (error) {
-      logger.error(
-        'Error fetching vehicles requiring maintenance:',
-        error.message
-      )
+    if (reviewsError) {
+      logger.error('Error fetching reviews with issues:', reviewsError.message)
       return res.status(500).json({ error: 'Database error' })
     }
 
-    return res.status(200).json(data || [])
+    // Get unique vehicle IDs from the reviews
+    const vehicleIds = [
+      ...new Set(reviewsWithIssues.map(review => review.vehicle_id))
+    ]
+
+    if (vehicleIds.length === 0) {
+      return res.status(200).json([])
+    }
+
+    // Get vehicle details for these IDs
+    const { data: vehicles, error: vehiclesError } = await supabase
+      .from('vehicles')
+      .select('id, brand, model, plate')
+      .in('id', vehicleIds)
+
+    if (vehiclesError) {
+      logger.error('Error fetching vehicles:', vehiclesError.message)
+      return res.status(500).json({ error: 'Database error' })
+    }
+
+    // Combine the data to return vehicles with their latest issue
+    const result = vehicles.map(vehicle => {
+      const latestReview = reviewsWithIssues
+        .filter(review => review.vehicle_id === vehicle.id)
+        .sort(
+          (a, b) =>
+            new Date(b.review_date).getTime() -
+            new Date(a.review_date).getTime()
+        )[0]
+
+      return {
+        vehicle_id: vehicle.id,
+        brand: vehicle.brand,
+        model: vehicle.model,
+        plate: vehicle.plate,
+        latest_review_id: latestReview ? latestReview.id : null,
+        latest_review_date: latestReview ? latestReview.review_date : null,
+        issues_noted: latestReview ? latestReview.issues_noted : null
+      }
+    })
+
+    return res.status(200).json(result)
   } catch (error) {
     logger.error('Error in getVehiclesRequiringMaintenance:', error)
     return res.status(500).json({ error: 'Internal server error' })
