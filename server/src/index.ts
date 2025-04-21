@@ -6,6 +6,7 @@ import dotenv from 'dotenv'
 import { authRouter } from './routes/auth'
 import { vehiclesRouter } from './routes/vehicles'
 import { driverRouter } from './routes/driverRoutes'
+import { vehicleReviewsRouter } from './routes/vehicleReviewRoutes'
 import { errorHandler } from './middleware/errorHandler'
 
 // Load environment variables
@@ -25,6 +26,7 @@ app.use(express.json()) // Parse JSON request bodies
 app.use('/api/auth', authRouter)
 app.use('/api/vehicles', vehiclesRouter)
 app.use('/api/drivers', driverRouter)
+app.use('/api/vehicle-reviews', vehicleReviewsRouter)
 
 // Health check endpoint
 app.get('/health', (req, res) => {

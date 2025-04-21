@@ -206,3 +206,34 @@ export const vehicleApi = {
       }
     })
 }
+
+// Vehicle reviews API
+export const vehicleReviewsApi = {
+  // Get all vehicle reviews
+  getAll: async (filters = {}) => {
+    const queryParams = new URLSearchParams(filters)
+    const response = await apiRequest(`/vehicle-reviews?${queryParams}`)
+    return response.data
+  },
+
+  // Get vehicle review by ID
+  getById: async id => {
+    const response = await apiRequest(`/vehicle-reviews/${id}`)
+    return response.data
+  },
+
+  // Create a new vehicle review
+  create: async reviewData => {
+    const response = await apiRequest('/vehicle-reviews', {
+      method: 'POST',
+      body: JSON.stringify(reviewData)
+    })
+    return response.data
+  },
+
+  // Get vehicles requiring maintenance (admin only)
+  getVehiclesRequiringMaintenance: async () => {
+    const response = await apiRequest('/vehicle-reviews/requiring-maintenance')
+    return response.data
+  }
+}

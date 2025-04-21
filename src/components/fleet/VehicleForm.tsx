@@ -23,13 +23,15 @@ import { Vehicle, Driver } from '@/types/fleet'
 import { useFleet } from '@/contexts/FleetContext'
 import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
+import { Label } from '@/components/ui/label'
 
 // Zod schema for validation
 const vehicleSchema = z.object({
   brand: z.string().min(1, { message: 'Marca es obligatoria' }),
   model: z.string().min(1, { message: 'Modelo es obligatorio' }),
   plate: z.string().min(1, { message: 'Matrícula es obligatoria' }),
-  driverId: z.string().optional().nullable()
+  driverId: z.string().optional().nullable(),
+  status: z.enum(['available', 'assigned', 'maintenance']).default('available')
 })
 
 type VehicleFormValues = z.infer<typeof vehicleSchema>
@@ -45,21 +47,26 @@ export function VehicleForm({ vehicle, onSave }: VehicleFormProps) {
     updateVehicle,
     drivers,
     getAvailableDrivers,
+    getVehicleDriver,
     isLoading
   } = useFleet()
 
   console.log('Form data - Vehicle:', vehicle)
   console.log('Form data - All drivers:', drivers)
 
+  // Get available drivers for selection
   const availableDrivers = getAvailableDrivers()
-  // If editing a vehicle, include its current driver in the list if any
-  const currentDriver = vehicle?.driver?.id
-    ? drivers.find(d => d.id === vehicle.driver?.id)
+
+  // If editing a vehicle, find its current driver
+  const currentDriver = vehicle?.driverid
+    ? drivers.find(d => d.id === vehicle.driverid)
     : undefined
 
-  const allDriverOptions = currentDriver
-    ? [...availableDrivers, currentDriver]
-    : availableDrivers
+  // Combine available drivers with current driver (if any) for dropdown options
+  const allDriverOptions =
+    currentDriver && !availableDrivers.some(d => d.id === currentDriver.id)
+      ? [...availableDrivers, currentDriver]
+      : availableDrivers
 
   console.log('Form data - Available drivers:', availableDrivers)
   console.log('Form data - Current driver:', currentDriver)
@@ -68,7 +75,8 @@ export function VehicleForm({ vehicle, onSave }: VehicleFormProps) {
     brand: vehicle?.brand || '',
     model: vehicle?.model || '',
     plate: vehicle?.plate || '',
-    driverId: vehicle?.driver?.id || null
+    driverId: vehicle?.driverid || null,
+    status: vehicle?.status || 'available'
   }
 
   const form = useForm<VehicleFormValues>({
@@ -85,7 +93,8 @@ export function VehicleForm({ vehicle, onSave }: VehicleFormProps) {
         brand: vehicle.brand || '',
         model: vehicle.model || '',
         plate: vehicle.plate || '',
-        driverId: vehicle.driver?.id || null
+        driverId: vehicle.driverid || null,
+        status: vehicle.status || 'available'
       })
     }
   }, [form, vehicle])
@@ -98,7 +107,8 @@ export function VehicleForm({ vehicle, onSave }: VehicleFormProps) {
         model: data.model,
         plate: data.plate,
         // Explicitly pass driverId, ensuring null is sent if 'none' is selected
-        driverId: data.driverId === 'none' ? null : data.driverId
+        driverId: data.driverId === 'none' ? null : data.driverId,
+        status: data.status
       }
 
       if (vehicle) {
@@ -193,6 +203,28 @@ export function VehicleForm({ vehicle, onSave }: VehicleFormProps) {
                 Selecciona un conductor activo y disponible para asignarlo a
                 este vehículo.
               </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="status"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Estado</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona el estado" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="available">Disponible</SelectItem>
+                  <SelectItem value="assigned">Asignado</SelectItem>
+                  <SelectItem value="maintenance">En mantenimiento</SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

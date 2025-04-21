@@ -17,44 +17,73 @@ import {
   Fuel,
   AlertTriangle,
   MapPin,
-  BarChart3
+  BarChart3,
+  Car,
+  User,
+  Wrench,
+  CheckCircle2
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { useEffect, useState } from 'react'
+import { vehicleReviewsApi } from '@/services/api'
+import { Link } from 'react-router-dom'
+import { VehicleStatusBadge } from '@/components/fleet/VehicleStatusBadge'
+
+type MaintenanceVehicle = {
+  vehicle_id: string
+  brand: string
+  model: string
+  plate: string
+  latest_review_id: string
+  latest_review_date: string
+  issues_noted: string | null
+}
+
+// Update the Vehicle type to include 'maintenance' status
+type VehicleStatus = 'available' | 'assigned' | 'maintenance'
 
 const AdminDashboard = () => {
   const { drivers, vehicles, getAvailableVehicles } = useFleet()
   const navigate = useNavigate()
+  const [vehiclesInMaintenance, setVehiclesInMaintenance] = useState<
+    MaintenanceVehicle[]
+  >([])
+  const [loading, setLoading] = useState(true)
 
   const activeDrivers = drivers.filter(d => d.status === 'active')
   const availableVehicles = getAvailableVehicles()
-  const assignedVehicles = vehicles.filter(v => v.status === 'assigned')
+  const assignedVehicles = vehicles.filter(v => v.status === 'assigned').length
+  const maintenanceVehicles = vehicles.filter(
+    v => v.status === ('maintenance' as VehicleStatus)
+  ).length
 
   // Calculate some fake metrics for the dashboard map section
-  const getRandomCityDistribution = () => {
+  const getCityDistribution = () => {
+    // Create a random distribution of vehicles across cities
     const cities = [
       {
         name: 'Madrid',
-        count: Math.floor(Math.random() * assignedVehicles.length * 0.5) + 1
+        count: Math.floor(Math.random() * assignedVehicles * 0.5) + 1
       },
       {
         name: 'Barcelona',
-        count: Math.floor(Math.random() * assignedVehicles.length * 0.4) + 1
+        count: Math.floor(Math.random() * assignedVehicles * 0.4) + 1
       },
       {
         name: 'Valencia',
-        count: Math.floor(Math.random() * assignedVehicles.length * 0.3) + 1
+        count: Math.floor(Math.random() * assignedVehicles * 0.3) + 1
       },
       {
         name: 'Sevilla',
-        count: Math.floor(Math.random() * assignedVehicles.length * 0.2) + 1
+        count: Math.floor(Math.random() * assignedVehicles * 0.2) + 1
       }
     ]
     // Ensure the total doesn't exceed the number of vehicles
-    let total = cities.reduce((sum, city) => sum + city.count, 0)
-    if (total > assignedVehicles.length) {
+    const total = cities.reduce((sum, city) => sum + city.count, 0)
+    if (total > assignedVehicles) {
       // Adjust proportionally
-      const factor = assignedVehicles.length / total
+      const factor = assignedVehicles / total
       cities.forEach(city => {
         city.count = Math.max(1, Math.floor(city.count * factor))
       })
@@ -62,16 +91,34 @@ const AdminDashboard = () => {
     return cities
   }
 
-  const cityDistribution = getRandomCityDistribution()
+  const cities = getCityDistribution()
 
-  // Fake fleet performance metrics
-  const fleetMetrics = {
-    fuelEfficiency: Math.floor(Math.random() * 20) + 75, // percentage
-    maintenanceStatus: Math.floor(Math.random() * 15) + 80, // percentage
-    averageSpeed: Math.floor(Math.random() * 20) + 60, // km/h
-    alertCount: Math.floor(Math.random() * 3), // number of alerts
+  // Random metrics for the dashboard
+  const dailyMetrics = {
+    activeVehicles: Math.min(
+      assignedVehicles,
+      Math.floor(Math.random() * assignedVehicles + 1)
+    ),
     totalDistance: Math.floor(Math.random() * 1000) + 4000 // total km today
   }
+
+  // Fetch vehicles requiring maintenance
+  useEffect(() => {
+    const fetchMaintenanceVehicles = async () => {
+      try {
+        setLoading(true)
+        const data =
+          (await vehicleReviewsApi.getVehiclesRequiringMaintenance()) as MaintenanceVehicle[]
+        setVehiclesInMaintenance(data)
+      } catch (error) {
+        console.error('Error fetching maintenance vehicles:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMaintenanceVehicles()
+  }, [])
 
   return (
     <AdminLayout>
@@ -154,7 +201,13 @@ const AdminDashboard = () => {
                   <span className="text-sm text-muted-foreground">
                     Vehículos asignados:
                   </span>
-                  <span className="font-medium">{assignedVehicles.length}</span>
+                  <span className="font-medium">{assignedVehicles}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Vehículos en mantenimiento:
+                  </span>
+                  <span className="font-medium">{maintenanceVehicles}</span>
                 </div>
               </div>
               <Button
@@ -180,7 +233,7 @@ const AdminDashboard = () => {
                   <span className="text-sm text-muted-foreground">
                     Vehículos asignados:
                   </span>
-                  <span className="font-medium">{assignedVehicles.length}</span>
+                  <span className="font-medium">{assignedVehicles}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
@@ -197,7 +250,7 @@ const AdminDashboard = () => {
                   <span className="font-medium">
                     {vehicles.length > 0
                       ? `${Math.round(
-                          (assignedVehicles.length / vehicles.length) * 100
+                          (assignedVehicles / vehicles.length) * 100
                         )}%`
                       : '0%'}
                   </span>
@@ -226,11 +279,13 @@ const AdminDashboard = () => {
                     Seguimiento en tiempo real de tus vehículos
                   </CardDescription>
                 </div>
-                {fleetMetrics.alertCount > 0 && (
+                {dailyMetrics.activeVehicles > 0 && (
                   <Badge variant="destructive" className="flex items-center">
                     <AlertTriangle className="h-4 w-4 mr-1" />
-                    {fleetMetrics.alertCount}{' '}
-                    {fleetMetrics.alertCount === 1 ? 'alerta' : 'alertas'}
+                    {dailyMetrics.activeVehicles}{' '}
+                    {dailyMetrics.activeVehicles === 1
+                      ? 'vehículo activo'
+                      : 'vehículos activos'}
                   </Badge>
                 )}
               </div>
@@ -280,30 +335,28 @@ const AdminDashboard = () => {
                       />
 
                       {/* Vehicle dots */}
-                      {Array.from({ length: assignedVehicles.length }).map(
-                        (_, i) => {
-                          const x = 100 + Math.random() * 600
-                          const y = 100 + Math.random() * 200
-                          return (
-                            <g key={i}>
-                              <circle
-                                cx={x}
-                                cy={y}
-                                r="8"
-                                fill="#3b82f6"
-                                opacity="0.8"
-                              />
-                              <circle
-                                cx={x}
-                                cy={y}
-                                r="12"
-                                fill="#3b82f6"
-                                opacity="0.3"
-                              />
-                            </g>
-                          )
-                        }
-                      )}
+                      {Array.from({ length: assignedVehicles }).map((_, i) => {
+                        const x = 100 + Math.random() * 600
+                        const y = 100 + Math.random() * 200
+                        return (
+                          <g key={i}>
+                            <circle
+                              cx={x}
+                              cy={y}
+                              r="8"
+                              fill="#3b82f6"
+                              opacity="0.8"
+                            />
+                            <circle
+                              cx={x}
+                              cy={y}
+                              r="12"
+                              fill="#3b82f6"
+                              opacity="0.3"
+                            />
+                          </g>
+                        )
+                      })}
 
                       {/* City markers */}
                       <g transform="translate(300, 150)">
@@ -379,7 +432,7 @@ const AdminDashboard = () => {
                       Distribución por Ciudades
                     </h3>
                     <div className="space-y-2">
-                      {cityDistribution.map(city => (
+                      {cities.map(city => (
                         <div key={city.name} className="space-y-1">
                           <div className="flex justify-between text-xs">
                             <span>{city.name}</span>
@@ -388,7 +441,7 @@ const AdminDashboard = () => {
                             </span>
                           </div>
                           <Progress
-                            value={(city.count / assignedVehicles.length) * 100}
+                            value={(city.count / assignedVehicles) * 100}
                             className="h-1.5"
                           />
                         </div>
@@ -404,33 +457,9 @@ const AdminDashboard = () => {
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="bg-green-50 rounded-md p-2">
                         <div className="flex items-center justify-between text-green-800">
-                          <span>Eficiencia combustible</span>
-                          <span className="font-bold">
-                            {fleetMetrics.fuelEfficiency}%
-                          </span>
-                        </div>
-                      </div>
-                      <div className="bg-blue-50 rounded-md p-2">
-                        <div className="flex items-center justify-between text-blue-800">
-                          <span>Velocidad media</span>
-                          <span className="font-bold">
-                            {fleetMetrics.averageSpeed} km/h
-                          </span>
-                        </div>
-                      </div>
-                      <div className="bg-purple-50 rounded-md p-2">
-                        <div className="flex items-center justify-between text-purple-800">
-                          <span>Estado mant.</span>
-                          <span className="font-bold">
-                            {fleetMetrics.maintenanceStatus}%
-                          </span>
-                        </div>
-                      </div>
-                      <div className="bg-amber-50 rounded-md p-2">
-                        <div className="flex items-center justify-between text-amber-800">
                           <span>Distancia total</span>
                           <span className="font-bold">
-                            {fleetMetrics.totalDistance} km
+                            {dailyMetrics.totalDistance} km
                           </span>
                         </div>
                       </div>
@@ -445,6 +474,84 @@ const AdminDashboard = () => {
               >
                 Ver mapa detallado
               </Button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Maintenance Section */}
+        <div className="grid gap-4 md:grid-cols-1">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Wrench className="h-5 w-5 text-amber-500" />
+                Vehículos que requieren mantenimiento
+              </CardTitle>
+              <CardDescription>
+                Revisiones recientes con problemas detectados
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <p className="text-muted-foreground text-sm">
+                  Cargando datos...
+                </p>
+              ) : vehiclesInMaintenance.length === 0 ? (
+                <div className="flex items-center gap-2 rounded-lg border border-dashed p-4 text-muted-foreground">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                  <p>
+                    No hay vehículos que requieran mantenimiento en este
+                    momento.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {vehiclesInMaintenance.map(vehicle => (
+                    <div
+                      key={vehicle.vehicle_id}
+                      className="rounded-lg border p-4 hover:bg-muted/50"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-500" />
+                            <h3 className="font-medium">
+                              {vehicle.brand} {vehicle.model} ({vehicle.plate})
+                            </h3>
+                          </div>
+
+                          {vehicle.issues_noted && (
+                            <p className="text-sm text-muted-foreground">
+                              <span className="font-medium">
+                                Problema reportado:
+                              </span>{' '}
+                              {vehicle.issues_noted}
+                            </p>
+                          )}
+
+                          <p className="text-xs text-muted-foreground">
+                            Revisión realizada:{' '}
+                            {new Date(
+                              vehicle.latest_review_date
+                            ).toLocaleString()}
+                          </p>
+                        </div>
+
+                        <Link to={`/admin/vehicles/${vehicle.vehicle_id}`}>
+                          <Button variant="outline" size="sm">
+                            Ver detalles
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+
+                  <Link to="/admin/vehicles">
+                    <Button variant="outline" className="w-full">
+                      Ver todos los vehículos
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
