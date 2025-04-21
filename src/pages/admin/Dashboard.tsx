@@ -127,9 +127,9 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="container py-6">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold tracking-tight">
+      <div className="py-6">
+        <div className="mb-6 lg:mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Panel de Administración
           </h2>
           <p className="text-muted-foreground">
@@ -137,7 +137,7 @@ const AdminDashboard = () => {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <Card className="dashboard-card hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -274,7 +274,7 @@ const AdminDashboard = () => {
         <div className="mt-8">
           <Card className="hover:shadow-md transition-shadow overflow-hidden">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between">
                 <div>
                   <CardTitle className="text-xl flex items-center gap-2">
                     Monitorización de Flota
@@ -285,7 +285,10 @@ const AdminDashboard = () => {
                   </CardDescription>
                 </div>
                 {dailyMetrics.activeVehicles > 0 && (
-                  <Badge variant="destructive" className="flex items-center">
+                  <Badge
+                    variant="destructive"
+                    className="flex items-center mt-2 sm:mt-0 w-fit"
+                  >
                     <AlertTriangle className="h-4 w-4 mr-1" />
                     {dailyMetrics.activeVehicles}{' '}
                     {dailyMetrics.activeVehicles === 1
@@ -484,7 +487,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Maintenance Section */}
-        <div className="grid gap-4 md:grid-cols-1">
+        <div className="mt-6 grid gap-4 md:grid-cols-1">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-xl flex items-center gap-2">
@@ -515,7 +518,7 @@ const AdminDashboard = () => {
                       key={vehicle.vehicle_id}
                       className="rounded-lg border p-4 hover:bg-muted/50"
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
                             <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -541,7 +544,10 @@ const AdminDashboard = () => {
                           </p>
                         </div>
 
-                        <Link to={`/admin/vehicles/${vehicle.vehicle_id}`}>
+                        <Link
+                          to={`/admin/vehicles/${vehicle.vehicle_id}`}
+                          className="sm:ml-auto"
+                        >
                           <Button variant="outline" size="sm">
                             Ver detalles
                           </Button>
