@@ -1,6 +1,6 @@
 const API_URL = import.meta.env.VITE_API_URL
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   data?: {
     data?: T
     message?: string
@@ -176,7 +176,19 @@ export const vehicleApi = {
       })
 
       console.log(`getVehicleById response for ${id}:`, response)
-      return response
+
+      // Si hay un error en la respuesta, lo devolvemos
+      if (response.error) {
+        return { error: response.error }
+      }
+
+      // Si no hay data o data es undefined/null, devolvemos un error
+      if (!response.data) {
+        return { error: 'No data received from server' }
+      }
+
+      // Devolvemos directamente la data
+      return { data: response.data }
     } catch (error) {
       console.error(`Error in getVehicleById for ${id}:`, error)
       return { error: String(error) }
@@ -284,7 +296,7 @@ export const vehicleReviewsApi = {
   },
 
   // Create a new vehicle review
-  create: async (reviewData: any, token: string) => {
+  create: async (reviewData: Record<string, unknown>, token: string) => {
     const response = await apiRequest('/vehicle-reviews', {
       method: 'POST',
       headers: {
@@ -297,7 +309,7 @@ export const vehicleReviewsApi = {
 
   // Get vehicles requiring maintenance (admin only)
   getVehiclesRequiringMaintenance: async (token: string) => {
-    const response = await apiRequest(
+    const response = await apiRequest<unknown>(
       '/vehicle-reviews/requiring-maintenance',
       {
         headers: {

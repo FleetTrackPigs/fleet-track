@@ -43,10 +43,14 @@ export function MaintenanceModal({
   const { toast } = useToast()
   const { token } = useAuth()
 
-  // Debug vehicle object when component mounts or vehicle changes
+  // Comprobamos que el vehículo es válido cuando cambia
   useEffect(() => {
     console.log('MaintenanceModal - Vehicle:', vehicle)
-    console.log('MaintenanceModal - Vehicle ID:', vehicle?.id)
+    if (!vehicle?.id) {
+      console.error('Vehicle object is invalid:', vehicle)
+    } else {
+      console.log('Valid vehicle with ID:', vehicle.id)
+    }
   }, [vehicle])
 
   const handleSubmit = async () => {
@@ -79,7 +83,7 @@ export function MaintenanceModal({
       return
     }
 
-    // Check if vehicle ID is valid
+    // Verificar que el ID del vehículo existe
     if (!vehicle?.id) {
       console.error('Error: Vehicle ID is undefined or null', vehicle)
       toast({
@@ -92,15 +96,17 @@ export function MaintenanceModal({
 
     setIsLoading(true)
     try {
-      // Create maintenance data object
+      // Crear objeto de datos de mantenimiento
       const maintenanceData = {
         scheduled_date: date.toISOString(),
         description: description.trim() || 'Mantenimiento programado'
       }
 
-      console.log('Sending maintenance request for vehicle ID:', vehicle.id)
+      console.log(
+        `Enviando solicitud de mantenimiento para vehículo ID: ${vehicle.id}`
+      )
 
-      // Update vehicle status to maintenance and send maintenance data
+      // Actualizar estado del vehículo a mantenimiento
       const response = await vehicleApi.updateVehicleStatus(
         vehicle.id,
         'maintenance',
@@ -108,7 +114,7 @@ export function MaintenanceModal({
         maintenanceData
       )
 
-      console.log('Maintenance API response:', response)
+      console.log('Respuesta API mantenimiento:', response)
 
       if (response.error) {
         throw new Error(response.error)

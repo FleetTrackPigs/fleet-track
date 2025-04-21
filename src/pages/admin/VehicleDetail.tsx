@@ -778,6 +778,17 @@ const VehicleDetailPage = () => {
       {/* Maintenance Modal */}
       {vehicle &&
         (() => {
+          // Asegurar que vehicle tiene todas las propiedades necesarias antes de pasarlo al modal
+          if (
+            !vehicle.id ||
+            !vehicle.brand ||
+            !vehicle.model ||
+            !vehicle.plate
+          ) {
+            console.error('Vehicle is missing required properties:', vehicle)
+            return null
+          }
+
           console.log(
             'Vehicle being passed to MaintenanceModal:',
             JSON.stringify(vehicle)
