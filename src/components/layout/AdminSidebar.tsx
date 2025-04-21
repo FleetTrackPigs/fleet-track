@@ -64,14 +64,14 @@ const AdminSidebar = ({ closeSidebar }: AdminSidebarProps) => {
           <span>Vehículos</span>
         </Button>
 
-        <Button
+        {/* <Button
           variant="ghost"
           className="justify-start gap-3 text-sidebar-foreground"
           onClick={() => handleNavigation('/admin/assign')}
         >
           <ArrowRightLeft size={18} />
           <span>Asignaciones</span>
-        </Button>
+        </Button> */}
 
         <Button
           variant="ghost"
