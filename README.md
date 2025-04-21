@@ -57,7 +57,7 @@ Follow these instructions to get a local copy up and running for development and
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/yourusername/fleet-track.git # Replace with your repo URL
+    git clone https://github.com/FleetTrackPigs/fleet-track.git # Replace with your repo URL
     cd fleet-track
     ```
 
