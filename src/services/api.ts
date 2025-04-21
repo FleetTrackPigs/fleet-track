@@ -15,6 +15,8 @@ export async function apiRequest<T>(
 ): Promise<ApiResponse<T>> {
   try {
     const url = `${API_URL}${endpoint}`
+    console.log(`API Request: ${options.method || 'GET'} ${url}`)
+
     const headers = {
       'Content-Type': 'application/json',
       ...options.headers
@@ -26,6 +28,7 @@ export async function apiRequest<T>(
     })
 
     const data = await response.json()
+    console.log(`API Response for ${endpoint}:`, data)
 
     if (!response.ok) {
       throw new Error(data.message || 'Error en la petición')
@@ -142,6 +145,61 @@ export const driverApi = {
 
   deleteDriver: (id: string, token: string) =>
     apiRequest(`/drivers/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+}
+
+// Vehicle endpoints
+export const vehicleApi = {
+  getAllVehicles: (token: string) =>
+    apiRequest('/vehicles', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }),
+
+  getVehicleById: (id: string, token: string) =>
+    apiRequest(`/vehicles/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }),
+
+  createVehicle: (
+    data: { brand: string; model: string; plate: string },
+    token: string
+  ) =>
+    apiRequest('/vehicles', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    }),
+
+  updateVehicle: (
+    id: string,
+    data: {
+      brand?: string
+      model?: string
+      plate?: string
+      driverId?: string | null // Include driverId for assignment
+    },
+    token: string
+  ) =>
+    apiRequest(`/vehicles/${id}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    }),
+
+  deleteVehicle: (id: string, token: string) =>
+    apiRequest(`/vehicles/${id}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`

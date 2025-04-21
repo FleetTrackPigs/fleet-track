@@ -5,7 +5,7 @@ import morgan from 'morgan'
 import dotenv from 'dotenv'
 import { authRouter } from './routes/auth'
 import { vehiclesRouter } from './routes/vehicles'
-import driverRouter from './routes/driverRoutes'
+import { driverRouter } from './routes/driverRoutes'
 import { errorHandler } from './middleware/errorHandler'
 
 // Load environment variables

@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import express from 'express'
 import {
   getAllDrivers,
   getDriverById,
@@ -6,22 +6,54 @@ import {
   updateDriver,
   deleteDriver
 } from '../controllers/driverController'
+import { authenticate, checkRole } from '../middleware/auth'
+import { body, param } from 'express-validator'
 
-const router = Router()
+const router = express.Router()
+
+// Apply authentication middleware to all driver routes
+router.use(authenticate)
 
 // GET /drivers - Get all drivers
 router.get('/', getAllDrivers)
 
 // GET /drivers/:id - Get driver by ID
-router.get('/:id', getDriverById)
+router.get(
+  '/:id',
+  [param('id').isUUID().withMessage('Valid driver ID is required')],
+  getDriverById
+)
 
-// POST /drivers - Create a new driver
-router.post('/', createDriver)
+// POST /drivers - Create a new driver (admin only)
+router.post(
+  '/',
+  [
+    checkRole('admin'),
+    body('userId').notEmpty().withMessage('User ID is required'),
+    body('name').notEmpty().withMessage('Name is required'),
+    body('lastName').notEmpty().withMessage('Last name is required')
+  ],
+  createDriver
+)
 
-// PUT /drivers/:id - Update a driver
-router.put('/:id', updateDriver)
+// PUT /drivers/:id - Update a driver (admin only)
+router.put(
+  '/:id',
+  [
+    checkRole('admin'),
+    param('id').isUUID().withMessage('Valid driver ID is required')
+  ],
+  updateDriver
+)
 
-// DELETE /drivers/:id - Delete a driver
-router.delete('/:id', deleteDriver)
+// DELETE /drivers/:id - Delete a driver (admin only)
+router.delete(
+  '/:id',
+  [
+    checkRole('admin'),
+    param('id').isUUID().withMessage('Valid driver ID is required')
+  ],
+  deleteDriver
+)
 
-export default router
+export { router as driverRouter }

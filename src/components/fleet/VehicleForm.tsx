@@ -1,140 +1,207 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select'
+import { Vehicle, Driver } from '@/types/fleet'
+import { useFleet } from '@/contexts/FleetContext'
+import { Loader2 } from 'lucide-react'
+import { useEffect } from 'react'
 
-import { useState } from "react";
-import { useFleet } from "@/contexts/FleetContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Vehicle } from "@/types/fleet";
+// Zod schema for validation
+const vehicleSchema = z.object({
+  brand: z.string().min(1, { message: 'Marca es obligatoria' }),
+  model: z.string().min(1, { message: 'Modelo es obligatorio' }),
+  plate: z.string().min(1, { message: 'Matrícula es obligatoria' }),
+  driverId: z.string().optional().nullable()
+})
+
+type VehicleFormValues = z.infer<typeof vehicleSchema>
 
 interface VehicleFormProps {
-  vehicle?: Vehicle;
-  onSave: () => void;
+  vehicle?: Vehicle // Optional vehicle for editing
+  onSave: () => void // Callback after successful save
 }
 
 export function VehicleForm({ vehicle, onSave }: VehicleFormProps) {
-  const { addVehicle, updateVehicle } = useFleet();
-  const isEditing = !!vehicle;
+  const {
+    createVehicle,
+    updateVehicle,
+    drivers,
+    getAvailableDrivers,
+    isLoading
+  } = useFleet()
 
-  const [formData, setFormData] = useState({
-    brand: vehicle?.brand || "",
-    model: vehicle?.model || "",
-    plate: vehicle?.plate || "",
-    status: vehicle?.status || "available"
-  });
+  console.log('Form data - Vehicle:', vehicle)
+  console.log('Form data - All drivers:', drivers)
 
-  const [errors, setErrors] = useState({
-    brand: "",
-    model: "",
-    plate: "",
-  });
+  const availableDrivers = getAvailableDrivers()
+  // If editing a vehicle, include its current driver in the list if any
+  const currentDriver = vehicle?.driver?.id
+    ? drivers.find(d => d.id === vehicle.driver?.id)
+    : undefined
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when field is edited
-    if (errors[name as keyof typeof errors]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
+  const allDriverOptions = currentDriver
+    ? [...availableDrivers, currentDriver]
+    : availableDrivers
+
+  console.log('Form data - Available drivers:', availableDrivers)
+  console.log('Form data - Current driver:', currentDriver)
+
+  const defaultValues: Partial<VehicleFormValues> = {
+    brand: vehicle?.brand || '',
+    model: vehicle?.model || '',
+    plate: vehicle?.plate || '',
+    driverId: vehicle?.driver?.id || null
+  }
+
+  const form = useForm<VehicleFormValues>({
+    resolver: zodResolver(vehicleSchema),
+    defaultValues,
+    mode: 'onChange'
+  })
+
+  // Reset form if vehicle prop changes (e.g., opening modal for different vehicle)
+  useEffect(() => {
+    if (vehicle) {
+      console.log('Setting form values from vehicle:', vehicle)
+      form.reset({
+        brand: vehicle.brand || '',
+        model: vehicle.model || '',
+        plate: vehicle.plate || '',
+        driverId: vehicle.driver?.id || null
+      })
     }
-  };
+  }, [form, vehicle])
 
-  const handleStatusChange = (value: string) => {
-    setFormData(prev => ({ ...prev, status: value as "available" | "assigned" }));
-  };
+  const onSubmit = async (data: VehicleFormValues) => {
+    console.log('Form submit data:', data)
+    try {
+      const payload = {
+        brand: data.brand,
+        model: data.model,
+        plate: data.plate,
+        // Explicitly pass driverId, ensuring null is sent if 'none' is selected
+        driverId: data.driverId === 'none' ? null : data.driverId
+      }
 
-  const validateForm = () => {
-    const newErrors = {
-      brand: formData.brand ? "" : "La marca es obligatoria",
-      model: formData.model ? "" : "El modelo es obligatorio",
-      plate: formData.plate ? "" : "La matrícula es obligatoria",
-    };
-
-    setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-
-    if (isEditing && vehicle) {
-      updateVehicle(vehicle.id, formData);
-    } else {
-      addVehicle(formData);
+      if (vehicle) {
+        // Update existing vehicle
+        await updateVehicle(vehicle.id, payload)
+      } else {
+        // Create new vehicle
+        await createVehicle(payload)
+      }
+      onSave() // Close modal on success
+    } catch (error) {
+      // Error is handled and toasted in the context
+      console.error('Form submission error:', error)
     }
-    
-    onSave();
-  };
+  }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="brand">Marca</Label>
-          <Input
-            id="brand"
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
             name="brand"
-            placeholder="Ej: Ford"
-            value={formData.brand}
-            onChange={handleChange}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Marca</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Ford" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.brand && <p className="text-xs text-red-500">{errors.brand}</p>}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="model">Modelo</Label>
-          <Input
-            id="model"
+          <FormField
+            control={form.control}
             name="model"
-            placeholder="Ej: Transit"
-            value={formData.model}
-            onChange={handleChange}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Modelo</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Transit" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-          {errors.model && <p className="text-xs text-red-500">{errors.model}</p>}
         </div>
-      </div>
-      
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="plate">Matrícula</Label>
-          <Input
-            id="plate"
-            name="plate"
-            placeholder="Ej: ABC1234"
-            value={formData.plate}
-            onChange={handleChange}
-          />
-          {errors.plate && <p className="text-xs text-red-500">{errors.plate}</p>}
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="status">Estado</Label>
-          <Select 
-            value={formData.status}
-            onValueChange={handleStatusChange}
-            disabled={!isEditing}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona un estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="available">Disponible</SelectItem>
-              <SelectItem value="assigned">Asignado</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onSave}>
-          Cancelar
+        <FormField
+          control={form.control}
+          name="plate"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Matrícula</FormLabel>
+              <FormControl>
+                <Input placeholder="Ej: ABC1234" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="driverId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Asignar Conductor</FormLabel>
+              <Select
+                onValueChange={value =>
+                  field.onChange(value === 'none' ? null : value)
+                }
+                defaultValue={field.value || 'none'} // Use 'none' for null/undefined
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar conductor..." />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="none">
+                    <span className="text-muted-foreground">
+                      -- No asignar --
+                    </span>
+                  </SelectItem>
+                  {allDriverOptions.map(driver => (
+                    <SelectItem key={driver.id} value={driver.id}>
+                      {driver.name} {driver.lastname}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormDescription>
+                Selecciona un conductor activo y disponible para asignarlo a
+                este vehículo.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          {vehicle ? 'Guardar Cambios' : 'Crear Vehículo'}
         </Button>
-        <Button type="submit">
-          {isEditing ? "Actualizar" : "Añadir"} Vehículo
-        </Button>
-      </div>
-    </form>
-  );
+      </form>
+    </Form>
+  )
 }

@@ -4,7 +4,12 @@ export interface Vehicle {
   model: string
   plate: string
   status: 'available' | 'assigned'
-  driverId?: string
+  driverid?: string
+  driver?: {
+    id: string
+    name: string
+    lastname: string
+  } | null
 }
 
 export interface User {
@@ -16,13 +21,13 @@ export interface User {
 
 export interface Driver {
   id: string
-  userId: string
+  userid: string
   name: string
-  lastName: string
+  lastname: string
   phone?: string
   license_type?: string
   license_expiry?: string
   status: 'active' | 'inactive'
-  vehicleId?: string
+  vehicleid?: string
   user?: User
 }
