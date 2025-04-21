@@ -93,26 +93,45 @@ const VehicleDetailPage = () => {
       setLoading(true)
       try {
         // Get vehicle details
-        const vehicleData = (await vehicleApi.getVehicleById(
-          id,
-          token
-        )) as Vehicle
+        const vehicleResponse = await vehicleApi.getVehicleById(id, token)
+
+        console.log('Raw vehicle API response:', vehicleResponse)
+
+        // La respuesta del servidor viene directamente en vehicleResponse
+        if (!vehicleResponse || vehicleResponse.error) {
+          setLoading(false)
+          toast({
+            title: 'Error',
+            description:
+              vehicleResponse?.error || 'No se pudo encontrar el vehículo',
+            variant: 'destructive'
+          })
+          return
+        }
+
+        // El servidor devuelve los datos directamente, no dentro de data.data
+        const vehicleData = vehicleResponse.data
+        console.log('Extracted vehicle data:', vehicleData)
 
         if (!vehicleData) {
           setLoading(false)
           toast({
             title: 'Error',
-            description: 'No se pudo encontrar el vehículo',
+            description: 'Datos de vehículo inválidos',
             variant: 'destructive'
           })
           return
         }
 
         // Get vehicle reviews
-        const reviewsData = (await vehicleReviewsApi.getByVehicleId(
+        const reviewsResponse = await vehicleReviewsApi.getByVehicleId(
           id,
           token
-        )) as VehicleReview[]
+        )
+
+        const reviewsData = Array.isArray(reviewsResponse.data)
+          ? reviewsResponse.data
+          : []
 
         // Simulate position data
         const simulatedPosition = {
@@ -130,9 +149,9 @@ const VehicleDetailPage = () => {
           ).toISOString()
         }
 
-        // Enhanced vehicle data
+        // Enhanced vehicle data - asegúrate de que vehicleData se trata como Vehicle
         const enhancedVehicle: EnhancedVehicle = {
-          ...vehicleData,
+          ...(vehicleData as Vehicle),
           reviews: reviewsData || [],
           position: simulatedPosition,
           stats: simulatedStats
@@ -726,7 +745,11 @@ const VehicleDetailPage = () => {
                   )}
 
                   {healthScore < 70 ? (
-                    <Button variant="destructive" className="w-full">
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => setIsMaintenanceModalOpen(true)}
+                    >
                       <Wrench className="mr-2 h-4 w-4" />
                       Programar mantenimiento urgente
                     </Button>
@@ -734,6 +757,7 @@ const VehicleDetailPage = () => {
                     <Button
                       variant="default"
                       className="w-full bg-amber-600 hover:bg-amber-700"
+                      onClick={() => setIsMaintenanceModalOpen(true)}
                     >
                       <Wrench className="mr-2 h-4 w-4" />
                       Programar revisión
@@ -752,14 +776,21 @@ const VehicleDetailPage = () => {
       </div>
 
       {/* Maintenance Modal */}
-      {vehicle && (
-        <MaintenanceModal
-          isOpen={isMaintenanceModalOpen}
-          onClose={() => setIsMaintenanceModalOpen(false)}
-          vehicle={vehicle}
-          onSuccess={handleMaintenanceSuccess}
-        />
-      )}
+      {vehicle &&
+        (() => {
+          console.log(
+            'Vehicle being passed to MaintenanceModal:',
+            JSON.stringify(vehicle)
+          )
+          return (
+            <MaintenanceModal
+              isOpen={isMaintenanceModalOpen}
+              onClose={() => setIsMaintenanceModalOpen(false)}
+              vehicle={vehicle}
+              onSuccess={handleMaintenanceSuccess}
+            />
+          )
+        })()}
     </AdminLayout>
   )
 }

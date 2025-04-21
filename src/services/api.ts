@@ -161,12 +161,27 @@ export const vehicleApi = {
       }
     }),
 
-  getVehicleById: (id: string, token: string) =>
-    apiRequest(`/vehicles/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }),
+  getVehicleById: async (id: string, token: string) => {
+    console.log(`Fetching vehicle with ID: ${id}`)
+    if (!id) {
+      console.error('getVehicleById called with invalid ID:', id)
+      return { error: 'Invalid vehicle ID' }
+    }
+
+    try {
+      const response = await apiRequest(`/vehicles/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      })
+
+      console.log(`getVehicleById response for ${id}:`, response)
+      return response
+    } catch (error) {
+      console.error(`Error in getVehicleById for ${id}:`, error)
+      return { error: String(error) }
+    }
+  },
 
   createVehicle: (
     data: { brand: string; model: string; plate: string },
@@ -206,14 +221,25 @@ export const vehicleApi = {
       scheduled_date?: string
       description?: string
     }
-  ) =>
-    apiRequest(`/vehicles/${id}/status`, {
+  ) => {
+    console.log('updateVehicleStatus called with:', {
+      id,
+      status,
+      maintenanceData
+    })
+    if (!id) {
+      console.error('Vehicle ID is missing in updateVehicleStatus!')
+      return Promise.reject(new Error('Vehicle ID is required'))
+    }
+
+    return apiRequest(`/vehicles/${id}/status`, {
       method: 'PATCH',
       headers: {
         Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ status, maintenanceData })
-    }),
+    })
+  },
 
   deleteVehicle: (id: string, token: string) =>
     apiRequest(`/vehicles/${id}`, {

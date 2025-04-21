@@ -6,7 +6,6 @@ import {
   Vehicle
 } from '../types/vehicle'
 import { validationResult } from 'express-validator'
-import { AppError } from '../utils/appError'
 import logger from '../utils/logger'
 
 // Get all vehicles
@@ -591,7 +590,17 @@ export const updateVehicleStatus = async (
 ) => {
   try {
     const { id } = req.params
-    const { status } = req.body
+
+    // Validate ID parameter
+    if (!id || id === 'undefined') {
+      logger.error('Invalid vehicle ID in updateVehicleStatus:', { id })
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid vehicle ID'
+      })
+    }
+
+    const { status, maintenanceData } = req.body
 
     // Validate request using express-validator
     const errors = validationResult(req)
@@ -599,6 +608,7 @@ export const updateVehicleStatus = async (
       return res.status(400).json({ errors: errors.array() })
     }
 
+    // Update vehicle status
     const { data, error } = await supabase
       .from('vehicles')
       .update({ status, updated_at: new Date().toISOString() })
@@ -608,11 +618,49 @@ export const updateVehicleStatus = async (
 
     if (error) {
       logger.error('Error updating vehicle status:', error)
-      return next(new AppError('Failed to update vehicle status', 500))
+      return next(new Error('Failed to update vehicle status'))
     }
 
     if (!data) {
-      return next(new AppError('Vehicle not found', 404))
+      return next(new Error('Vehicle not found'))
+    }
+
+    // If status is 'maintenance' and maintenanceData is provided,
+    // create a maintenance schedule record
+    if (status === 'maintenance' && maintenanceData) {
+      const {
+        scheduled_date = new Date().toISOString(),
+        description = 'Scheduled maintenance'
+      } = maintenanceData
+
+      // Insert maintenance schedule record
+      const { data: maintenanceRecord, error: maintenanceError } =
+        await supabase
+          .from('maintenance_schedules')
+          .insert({
+            vehicle_id: id,
+            scheduled_date,
+            maintenance_type: 'regular',
+            description,
+            status: 'pending'
+          })
+          .select()
+          .single()
+
+      if (maintenanceError) {
+        logger.error('Error creating maintenance schedule:', maintenanceError)
+        // Still return success for vehicle update, but log the error
+        logger.warn('Vehicle status updated but maintenance record failed')
+      } else {
+        logger.info(`Maintenance scheduled for vehicle ${id}`)
+        return res.status(200).json({
+          status: 'success',
+          data: {
+            vehicle: data,
+            maintenance: maintenanceRecord
+          }
+        })
+      }
     }
 
     res.status(200).json({
@@ -623,6 +671,6 @@ export const updateVehicleStatus = async (
     })
   } catch (error) {
     logger.error('Error in updateVehicleStatus:', error)
-    next(new AppError('Failed to update vehicle status', 500))
+    next(new Error('Failed to update vehicle status'))
   }
 }

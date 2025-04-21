@@ -61,7 +61,15 @@ router.patch(
     param('id').isUUID().withMessage('Valid vehicle ID is required'),
     body('status')
       .isIn(['available', 'assigned', 'maintenance'])
-      .withMessage('Invalid status value')
+      .withMessage('Invalid status value'),
+    body('maintenanceData.scheduled_date')
+      .optional()
+      .isISO8601()
+      .withMessage('Valid date is required for scheduled maintenance'),
+    body('maintenanceData.description')
+      .optional()
+      .isString()
+      .withMessage('Description must be a string')
   ],
   updateVehicleStatus
 )

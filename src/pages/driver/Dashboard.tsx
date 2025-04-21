@@ -14,7 +14,9 @@ import {
   Info,
   AlertTriangle,
   CheckCircle2,
-  ShieldAlert
+  ShieldAlert,
+  Wrench,
+  Calendar
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
@@ -22,6 +24,16 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/hooks/use-toast'
 import { vehicleReviewsApi } from '@/services/api'
+import { format } from 'date-fns'
+
+// Add interface for maintenance data
+interface MaintenanceInfo {
+  id: string
+  scheduled_date: string
+  maintenance_type: string
+  description: string
+  status: 'pending' | 'completed' | 'cancelled'
+}
 
 const DriverDashboard = () => {
   const { user, token } = useAuth()
@@ -30,6 +42,8 @@ const DriverDashboard = () => {
   // State for finding the current driver
   const [currentDriverId, setCurrentDriverId] = useState('')
   const [assignedVehicle, setAssignedVehicle] = useState(null)
+  const [maintenanceInfo, setMaintenanceInfo] =
+    useState<MaintenanceInfo | null>(null)
 
   // Find the current driver and their vehicle
   useEffect(() => {
@@ -51,6 +65,21 @@ const DriverDashboard = () => {
           const vehicle = vehicles.find(v => v.id === driver.vehicleid)
           if (vehicle) {
             setAssignedVehicle(vehicle)
+
+            // Check if vehicle is in maintenance
+            if (vehicle.status === 'maintenance' && token) {
+              // Fetch maintenance info - this would be an actual API call in a real implementation
+              // Here we're simulating it with a setTimeout
+              setTimeout(() => {
+                setMaintenanceInfo({
+                  id: 'maint-' + Math.random().toString(36).substr(2, 9),
+                  scheduled_date: new Date().toISOString(),
+                  maintenance_type: 'regular',
+                  description: 'Mantenimiento programado del vehículo',
+                  status: 'pending'
+                })
+              }, 500)
+            }
           }
         } else {
           // Try to find a vehicle assigned to this driver
@@ -66,7 +95,7 @@ const DriverDashboard = () => {
         }
       }
     }
-  }, [user, drivers, vehicles])
+  }, [user, drivers, vehicles, token])
 
   // State for vehicle review form
   const [reviewSubmitting, setReviewSubmitting] = useState(false)
@@ -198,6 +227,32 @@ const DriverDashboard = () => {
                       <VehicleStatusBadge status={assignedVehicle.status} />
                     </div>
                   </div>
+
+                  {/* Display maintenance information if available */}
+                  {assignedVehicle.status === 'maintenance' &&
+                    maintenanceInfo && (
+                      <div className="mt-2 rounded-lg bg-amber-50 p-3 border border-amber-200 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Wrench className="h-4 w-4 text-amber-600" />
+                          <span className="text-sm font-medium text-amber-800">
+                            En mantenimiento
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-amber-600" />
+                          <span className="text-sm text-amber-800">
+                            Fecha programada:{' '}
+                            {format(
+                              new Date(maintenanceInfo.scheduled_date),
+                              'dd/MM/yyyy'
+                            )}
+                          </span>
+                        </div>
+                        <p className="text-xs text-amber-700">
+                          {maintenanceInfo.description}
+                        </p>
+                      </div>
+                    )}
                 </div>
               ) : (
                 <div className="flex items-center gap-2 rounded-lg border border-dashed p-4 text-muted-foreground">
