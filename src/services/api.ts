@@ -198,6 +198,23 @@ export const vehicleApi = {
       body: JSON.stringify(data)
     }),
 
+  updateVehicleStatus: (
+    id: string,
+    status: 'available' | 'assigned' | 'maintenance',
+    token: string,
+    maintenanceData?: {
+      scheduled_date?: string
+      description?: string
+    }
+  ) =>
+    apiRequest(`/vehicles/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ status, maintenanceData })
+    }),
+
   deleteVehicle: (id: string, token: string) =>
     apiRequest(`/vehicles/${id}`, {
       method: 'DELETE',

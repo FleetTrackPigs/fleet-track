@@ -40,6 +40,7 @@ import { useToast } from '@/components/ui/use-toast'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import L from 'leaflet'
+import { MaintenanceModal } from '@/components/vehicles/MaintenanceModal'
 
 // Fix for default marker icons in Leaflet with React
 // @ts-expect-error - Known issue with Leaflet types
@@ -82,6 +83,7 @@ const VehicleDetailPage = () => {
   const [reviews, setReviews] = useState<VehicleReview[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('overview')
+  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false)
 
   // Fetch vehicle data and reviews
   useEffect(() => {
@@ -221,6 +223,25 @@ const VehicleDetailPage = () => {
 
   const healthScore = calculateHealthScore(reviews)
   const lastReview = reviews.length > 0 ? reviews[0] : null
+
+  // Handler for maintenance success
+  const handleMaintenanceSuccess = () => {
+    // Refresh vehicle data after maintenance is scheduled
+    if (id && token) {
+      vehicleApi.getVehicleById(id, token).then(vehicleData => {
+        if (vehicleData) {
+          setVehicle(prevVehicle => ({
+            ...prevVehicle!,
+            ...vehicleData
+          }))
+          toast({
+            title: 'Éxito',
+            description: 'Vehículo marcado para mantenimiento'
+          })
+        }
+      })
+    }
+  }
 
   return (
     <AdminLayout>
@@ -577,7 +598,11 @@ const VehicleDetailPage = () => {
                 <CardTitle className="text-lg">Acciones rápidas</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button className="w-full justify-start" variant="outline">
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                  onClick={() => setIsMaintenanceModalOpen(true)}
+                >
                   <Wrench className="mr-2 h-4 w-4" />
                   Marcar para mantenimiento
                 </Button>
@@ -725,6 +750,16 @@ const VehicleDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Maintenance Modal */}
+      {vehicle && (
+        <MaintenanceModal
+          isOpen={isMaintenanceModalOpen}
+          onClose={() => setIsMaintenanceModalOpen(false)}
+          vehicle={vehicle}
+          onSuccess={handleMaintenanceSuccess}
+        />
+      )}
     </AdminLayout>
   )
 }

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express'
+import { Request, Response, NextFunction } from 'express'
 import { supabase } from '../config/supabase'
 import {
   CreateVehicleRequest,
@@ -6,6 +6,8 @@ import {
   Vehicle
 } from '../types/vehicle'
 import { validationResult } from 'express-validator'
+import { AppError } from '../utils/appError'
+import logger from '../utils/logger'
 
 // Get all vehicles
 export const getAllVehicles = async (req: Request, res: Response) => {
@@ -575,5 +577,52 @@ export const assignVehicle = async (
         ? error.message
         : 'Internal server error during vehicle assignment'
     res.status(500).json({ message, error: String(error) })
+  }
+}
+
+/**
+ * Update a vehicle's status
+ * @route PATCH /api/vehicles/:id/status
+ */
+export const updateVehicleStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { id } = req.params
+    const { status } = req.body
+
+    // Validate request using express-validator
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() })
+    }
+
+    const { data, error } = await supabase
+      .from('vehicles')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) {
+      logger.error('Error updating vehicle status:', error)
+      return next(new AppError('Failed to update vehicle status', 500))
+    }
+
+    if (!data) {
+      return next(new AppError('Vehicle not found', 404))
+    }
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        vehicle: data
+      }
+    })
+  } catch (error) {
+    logger.error('Error in updateVehicleStatus:', error)
+    next(new AppError('Failed to update vehicle status', 500))
   }
 }
