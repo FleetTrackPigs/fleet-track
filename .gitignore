@@ -3,7 +3,6 @@ node_modules
 R0_24.pdf
 R1_24.pdf
 R2_24.pdf
-prd.md
 
 .cursor/mcp.json
 server/dist/*
