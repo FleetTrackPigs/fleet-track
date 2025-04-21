@@ -7,3 +7,4 @@ prd.md
 
 .cursor/mcp.json
 server/dist/*
+dist/*
