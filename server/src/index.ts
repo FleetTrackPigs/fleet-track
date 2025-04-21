@@ -16,9 +16,17 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 3000
 
+// CORS configuration
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}
+console.log('CORS configured with origin:', corsOptions.origin)
+
 // Apply middleware
 app.use(helmet()) // Security headers
-app.use(cors()) // CORS configuration
+app.use(cors(corsOptions)) // CORS configuration with options
 app.use(morgan('dev')) // Request logging
 app.use(express.json()) // Parse JSON request bodies
 
