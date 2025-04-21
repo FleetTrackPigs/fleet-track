@@ -96,6 +96,16 @@ const VehicleDetailPage = () => {
           token
         )) as Vehicle
 
+        if (!vehicleData) {
+          setLoading(false)
+          toast({
+            title: 'Error',
+            description: 'No se pudo encontrar el vehículo',
+            variant: 'destructive'
+          })
+          return
+        }
+
         // Get vehicle reviews
         const reviewsData = (await vehicleReviewsApi.getByVehicleId(
           id,
@@ -127,7 +137,7 @@ const VehicleDetailPage = () => {
         }
 
         setVehicle(enhancedVehicle)
-        setReviews(reviewsData || [])
+        setReviews(Array.isArray(reviewsData) ? reviewsData : [])
       } catch (error) {
         console.error('Error fetching vehicle data:', error)
         toast({
@@ -229,25 +239,29 @@ const VehicleDetailPage = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    {vehicle.brand.toLowerCase().includes('ford') ? (
-                      <Car className="h-5 w-5 text-blue-500" />
-                    ) : vehicle.brand.toLowerCase().includes('mercedes') ? (
-                      <Car className="h-5 w-5 text-slate-700" />
+                    {vehicle && vehicle.brand ? (
+                      vehicle.brand.toLowerCase().includes('ford') ? (
+                        <Car className="h-5 w-5 text-blue-500" />
+                      ) : vehicle.brand.toLowerCase().includes('mercedes') ? (
+                        <Car className="h-5 w-5 text-slate-700" />
+                      ) : (
+                        <Truck className="h-5 w-5 text-amber-500" />
+                      )
                     ) : (
                       <Truck className="h-5 w-5 text-amber-500" />
                     )}
                     <CardTitle className="text-2xl">
-                      {vehicle.brand} {vehicle.model}
+                      {vehicle?.brand} {vehicle?.model}
                     </CardTitle>
                   </div>
                   <CardDescription className="mt-1">
                     Matrícula:{' '}
                     <span className="font-mono font-medium">
-                      {vehicle.plate}
+                      {vehicle?.plate}
                     </span>
                   </CardDescription>
                 </div>
-                <VehicleStatusBadge status={vehicle.status} />
+                <VehicleStatusBadge status={vehicle?.status || 'available'} />
               </div>
             </CardHeader>
 
@@ -310,7 +324,10 @@ const VehicleDetailPage = () => {
                               Kilómetros totales
                             </p>
                             <p className="font-medium">
-                              {vehicle.stats?.totalKm.toLocaleString()} km
+                              {vehicle?.stats?.totalKm
+                                ? vehicle.stats.totalKm.toLocaleString()
+                                : '0'}{' '}
+                              km
                             </p>
                           </div>
                           <div>
@@ -318,7 +335,7 @@ const VehicleDetailPage = () => {
                               Consumo medio
                             </p>
                             <p className="font-medium">
-                              {vehicle.stats?.fuelEfficiency} L/100km
+                              {vehicle?.stats?.fuelEfficiency || '0'} L/100km
                             </p>
                           </div>
                         </div>
@@ -335,7 +352,7 @@ const VehicleDetailPage = () => {
                               Último mantenimiento
                             </p>
                             <p className="font-medium">
-                              {vehicle.stats?.lastMaintenance
+                              {vehicle?.stats?.lastMaintenance
                                 ? new Date(
                                     vehicle.stats.lastMaintenance
                                   ).toLocaleDateString()
@@ -502,20 +519,22 @@ const VehicleDetailPage = () => {
                       <CardTitle className="text-base">
                         Ubicación Actual
                       </CardTitle>
-                      {vehicle.status === 'assigned' ? (
-                        <CardDescription>
-                          El vehículo está actualmente en ruta.
-                        </CardDescription>
-                      ) : (
-                        <CardDescription>
-                          {vehicle.status === 'maintenance'
-                            ? 'El vehículo está en mantenimiento.'
-                            : 'El vehículo está estacionado.'}
-                        </CardDescription>
-                      )}
+                      <CardDescription>
+                        {vehicle?.status === 'assigned' ? (
+                          <CardDescription>
+                            El vehículo está actualmente en ruta.
+                          </CardDescription>
+                        ) : (
+                          <CardDescription>
+                            {vehicle?.status === 'maintenance'
+                              ? 'El vehículo está en mantenimiento.'
+                              : 'El vehículo está estacionado.'}
+                          </CardDescription>
+                        )}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {vehicle.position && (
+                      {vehicle?.position && (
                         <div className="h-[300px] rounded-md overflow-hidden border">
                           <MapContainer
                             center={[
@@ -536,8 +555,8 @@ const VehicleDetailPage = () => {
                               ]}
                             >
                               <Popup>
-                                {vehicle.brand} {vehicle.model} <br />
-                                Matrícula: {vehicle.plate}
+                                {vehicle?.brand} {vehicle?.model} <br />
+                                Matrícula: {vehicle?.plate}
                               </Popup>
                             </Marker>
                           </MapContainer>
@@ -565,7 +584,7 @@ const VehicleDetailPage = () => {
                 <Button
                   className="w-full justify-start"
                   variant="outline"
-                  disabled={vehicle.status !== 'available'}
+                  disabled={vehicle?.status !== 'available'}
                 >
                   <User className="mr-2 h-4 w-4" />
                   Asignar conductor
