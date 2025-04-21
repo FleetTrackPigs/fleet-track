@@ -28,20 +28,16 @@ _Here's a sneak peek of FleetTrack in action!_
 
 **Admin Dashboard:**
 
-- [Add Screenshot: Admin Dashboard Overview Here]
-  - _Example: `![Admin Dashboard](link/to/admin_dashboard_screenshot.png)`_
+
+![Admin Dashboard](https://github.com/user-attachments/assets/24242749-2b61-4800-b6d4-ca048399cf9b)
 
 **Vehicle Management:**
 
-- [Add Screenshot: Vehicle List/Details Here]
-  - _Example: `![Vehicle Management](link/to/vehicle_management_screenshot.png)`_
+![Vehicle Management](https://github.com/user-attachments/assets/59928d6f-edf4-45eb-8a75-cfb065fb863e)
 
 **Live Map View:**
 
-- [Add Screenshot: Live Map Here]
-  - _Example: `![Live Map](link/to/live_map_screenshot.png)`_
-
-_(Add more screenshots as needed for Driver Dashboard, Assignment View etc.)_
+![Live Map](https://github.com/user-attachments/assets/199f3cc3-573a-4c56-aaf5-d373488b7b28)
 
 ---
 
