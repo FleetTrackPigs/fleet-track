@@ -611,7 +611,7 @@ export const updateVehicleStatus = async (
     // Update vehicle status
     const { data, error } = await supabase
       .from('vehicles')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status })
       .eq('id', id)
       .select()
       .single()
