@@ -68,6 +68,37 @@ export const getVehicleReviewById = async (req: Request, res: Response) => {
 }
 
 /**
+ * Get vehicle reviews by vehicle ID
+ */
+export const getVehicleReviewsByVehicleId = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params
+
+    const { data, error } = await supabase
+      .from('vehicle_reviews_detailed')
+      .select('*')
+      .eq('vehicle_id', id)
+      .order('review_date', { ascending: false })
+
+    if (error) {
+      logger.error(
+        `Error fetching vehicle reviews for vehicle ${id}:`,
+        error.message
+      )
+      return res.status(500).json({ error: 'Error fetching vehicle reviews' })
+    }
+
+    return res.status(200).json(data)
+  } catch (error) {
+    logger.error('Error in getVehicleReviewsByVehicleId:', error)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+}
+
+/**
  * Create a new vehicle review
  */
 export const createVehicleReview = async (req: Request, res: Response) => {
@@ -121,13 +152,14 @@ export const createVehicleReview = async (req: Request, res: Response) => {
 }
 
 /**
- * Get vehicles requiring maintenance
+ * Get vehicles requiring maintenance (admin only)
  */
 export const getVehiclesRequiringMaintenance = async (
   req: Request,
   res: Response
 ) => {
   try {
+    // Use a SQL query to find vehicles with problems in their latest review
     const { data, error } = await supabase.rpc(
       'get_vehicles_requiring_maintenance'
     )
@@ -137,12 +169,10 @@ export const getVehiclesRequiringMaintenance = async (
         'Error fetching vehicles requiring maintenance:',
         error.message
       )
-      return res
-        .status(500)
-        .json({ error: 'Error fetching vehicles requiring maintenance' })
+      return res.status(500).json({ error: 'Database error' })
     }
 
-    return res.status(200).json(data)
+    return res.status(200).json(data || [])
   } catch (error) {
     logger.error('Error in getVehiclesRequiringMaintenance:', error)
     return res.status(500).json({ error: 'Internal server error' })

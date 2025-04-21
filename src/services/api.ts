@@ -230,6 +230,16 @@ export const vehicleReviewsApi = {
     return response.data
   },
 
+  // Get reviews for a specific vehicle
+  getByVehicleId: async (vehicleId: string, token: string) => {
+    const response = await apiRequest(`/vehicle-reviews/vehicle/${vehicleId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    return response.data
+  },
+
   // Create a new vehicle review
   create: async (reviewData: any, token: string) => {
     const response = await apiRequest('/vehicle-reviews', {

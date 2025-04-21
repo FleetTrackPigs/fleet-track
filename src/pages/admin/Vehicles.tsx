@@ -17,9 +17,10 @@ import {
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
-import { Car, Pencil, Trash, Search, RefreshCw } from 'lucide-react'
+import { Car, Pencil, Trash, Search, RefreshCw, Info } from 'lucide-react'
 import { Vehicle } from '@/types/fleet'
 import { useToast } from '@/components/ui/use-toast'
+import { useNavigate } from 'react-router-dom'
 
 const VehiclesPage = () => {
   const {
@@ -36,6 +37,7 @@ const VehiclesPage = () => {
     undefined
   )
   const [searchQuery, setSearchQuery] = useState('')
+  const navigate = useNavigate()
 
   // Debug output
   useEffect(() => {
@@ -202,8 +204,20 @@ const VehiclesPage = () => {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() =>
+                              navigate(`/admin/vehicles/${vehicle.id}`)
+                            }
+                            disabled={isLoading}
+                            title="Ver detalles"
+                          >
+                            <Info className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleEdit(vehicle)}
                             disabled={isLoading}
+                            title="Editar"
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
@@ -213,6 +227,7 @@ const VehiclesPage = () => {
                                 variant="ghost"
                                 size="icon"
                                 disabled={isLoading}
+                                title="Eliminar"
                               >
                                 <Trash className="h-4 w-4" />
                               </Button>

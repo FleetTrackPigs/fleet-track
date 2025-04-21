@@ -6,7 +6,7 @@ import dotenv from 'dotenv'
 import { authRouter } from './routes/auth'
 import { vehiclesRouter } from './routes/vehicles'
 import { driverRouter } from './routes/driverRoutes'
-import { vehicleReviewsRouter } from './routes/vehicleReviewRoutes'
+import vehicleReviewsRouter from './routes/vehicleReviewRoutes'
 import { errorHandler } from './middleware/errorHandler'
 
 // Load environment variables

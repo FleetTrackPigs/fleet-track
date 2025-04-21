@@ -3,7 +3,8 @@ import {
   getAllVehicleReviews,
   getVehicleReviewById,
   createVehicleReview,
-  getVehiclesRequiringMaintenance
+  getVehiclesRequiringMaintenance,
+  getVehicleReviewsByVehicleId
 } from '../controllers/vehicleReviewController'
 import { authenticate, checkRole } from '../middleware/auth'
 import { body, param } from 'express-validator'
@@ -22,6 +23,13 @@ router.get(
   '/requiring-maintenance',
   checkRole('admin'),
   getVehiclesRequiringMaintenance
+)
+
+// Get vehicle reviews by vehicle ID
+router.get(
+  '/vehicle/:id',
+  [param('id').isUUID().withMessage('Valid vehicle ID is required')],
+  getVehicleReviewsByVehicleId
 )
 
 // Get vehicle review by ID
@@ -60,4 +68,4 @@ router.post(
   createVehicleReview
 )
 
-export { router as vehicleReviewsRouter }
+export default router
