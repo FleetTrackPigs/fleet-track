@@ -320,3 +320,137 @@ export const vehicleReviewsApi = {
     return response.data
   }
 }
+
+// Incident API
+export const incidentApi = {
+  // Get all incidents
+  getAll: async (token: string) => {
+    const response = await apiRequest('/incidents', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    return response.data
+  },
+
+  // Get incident by ID
+  getById: async (id: string, token: string) => {
+    const response = await apiRequest(`/incidents/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    return response.data
+  },
+
+  // Get incidents for a specific vehicle
+  getByVehicleId: async (vehicleId: string, token: string) => {
+    const response = await apiRequest(`/incidents/vehicle/${vehicleId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    return response.data
+  },
+
+  // Get incidents for a specific driver
+  getByDriverId: async (driverId: string, token: string) => {
+    const response = await apiRequest(`/incidents/driver/${driverId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    return response.data
+  },
+
+  // Create a new incident
+  create: async (
+    incidentData: {
+      vehicle_id: string
+      driver_id: string
+      incident_date: Date | string
+      incident_type: 'accident' | 'breakdown' | 'violation' | 'other'
+      severity: 'minor' | 'moderate' | 'major' | 'critical'
+      description: string
+      location?: string
+      parties_involved?: string
+      witnesses?: string
+      police_report_number?: string
+      insurance_claim_number?: string
+      estimated_cost?: number
+    },
+    token: string
+  ) => {
+    const response = await apiRequest('/incidents', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(incidentData)
+    })
+    return response.data
+  },
+
+  // Update an incident
+  update: async (
+    id: string,
+    incidentData: {
+      vehicle_id?: string
+      driver_id?: string
+      incident_date?: Date | string
+      incident_type?: 'accident' | 'breakdown' | 'violation' | 'other'
+      severity?: 'minor' | 'moderate' | 'major' | 'critical'
+      description?: string
+      status?: 'reported' | 'investigating' | 'resolved' | 'closed'
+      location?: string
+      parties_involved?: string
+      witnesses?: string
+      police_report_number?: string
+      insurance_claim_number?: string
+      estimated_cost?: number
+      actual_cost?: number
+      resolution_notes?: string
+      resolution_date?: Date | string
+    },
+    token: string
+  ) => {
+    const response = await apiRequest(`/incidents/${id}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(incidentData)
+    })
+    return response.data
+  },
+
+  // Update just the status of an incident
+  updateStatus: async (
+    id: string,
+    statusData: {
+      status: 'reported' | 'investigating' | 'resolved' | 'closed'
+      resolution_notes?: string
+    },
+    token: string
+  ) => {
+    const response = await apiRequest(`/incidents/${id}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(statusData)
+    })
+    return response.data
+  },
+
+  // Delete an incident
+  delete: async (id: string, token: string) => {
+    const response = await apiRequest(`/incidents/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+    return response.data
+  }
+}
