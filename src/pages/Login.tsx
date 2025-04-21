@@ -195,7 +195,7 @@ const Login = () => {
           <div className="flex justify-center mb-4">
             <Logo size="lg" color="text-flota-blue" />
           </div>
-          <CardTitle className="text-2xl">Fleet Track</CardTitle>
+          {/* <CardTitle className="text-2xl">Fleet Track</CardTitle> */}
           <CardDescription>
             Sistema de gestión de flota de vehículos
           </CardDescription>
