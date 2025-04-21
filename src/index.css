@@ -1,3 +1,4 @@
+@import 'leaflet/dist/leaflet.css';
 
 @tailwind base;
 @tailwind components;
@@ -96,23 +97,23 @@
   .dashboard-card {
     @apply bg-white rounded-lg border border-border p-5 shadow-sm hover:shadow-md transition-shadow;
   }
-  
+
   .data-table {
     @apply w-full text-sm text-left rtl:text-right;
   }
-  
+
   .data-table thead {
     @apply text-xs uppercase bg-secondary;
   }
-  
+
   .data-table th {
     @apply px-4 py-3;
   }
-  
+
   .data-table td {
     @apply px-4 py-2.5 border-b;
   }
-  
+
   .data-table tbody tr:hover {
     @apply bg-muted;
   }
