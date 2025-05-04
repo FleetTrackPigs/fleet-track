@@ -11,6 +11,7 @@ import { AlertCircle, Key, UserPlus, LogIn, Check } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { authApi } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
+import validator from 'validator';
 
 const Login = () => {
   // Login state
@@ -91,8 +92,7 @@ const Login = () => {
     }
 
     // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(registerEmail)) {
+    if (!validator.isEmail(registerEmail)) {
       setRegisterError('Por favor, introduce un email válido');
       return;
     }
