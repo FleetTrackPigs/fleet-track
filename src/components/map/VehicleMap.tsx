@@ -320,7 +320,9 @@ export const VehicleMap = () => {
             <Marker
               key={vehicle.id}
               position={[vehicle.position.lat, vehicle.position.lng]}
-              icon={createVehicleIcon(vehicle.status === 'assigned' ? 'assigned' : 'available')}
+              icon={createVehicleIcon(
+                vehicle.status === 'assigned' ? 'assigned' : 'available'
+              )}
               eventHandlers={{
                 click: () => handleFollowVehicle(vehicle)
               }}
@@ -487,8 +489,7 @@ export const VehicleMap = () => {
                           {(() => {
                             const now = new Date()
                             now.setMinutes(
-                              now.getMinutes() +
-                                secureRandomInt(30, 150)
+                              now.getMinutes() + secureRandomInt(30, 150)
                             )
                             return now.toLocaleTimeString([], {
                               hour: '2-digit',
@@ -507,7 +508,7 @@ export const VehicleMap = () => {
                     <AlertTriangle className="h-4 w-4 mr-1" /> Advertencias
                   </h4>
                   <ul className="mt-2 text-sm list-disc pl-5 text-yellow-700">
-                    {selectedVehicle.telemetry.warnings.map((warning) => (
+                    {selectedVehicle.telemetry.warnings.map(warning => (
                       <li key={warning}>{warning}</li>
                     ))}
                   </ul>

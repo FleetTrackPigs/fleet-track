@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 
 // Use ES module import for Node.js crypto
 let nodeRandomInt: ((min: number, max: number) => number) | undefined
@@ -24,10 +24,10 @@ export function secureRandom(): number {
     // Browser
     const array = new Uint32Array(1)
     window.crypto.getRandomValues(array)
-    return array[0] / (0xFFFFFFFF + 1)
+    return array[0] / (0xffffffff + 1)
   } else if (nodeRandomInt) {
     // Node.js
-    return nodeRandomInt(0, 0xFFFFFFFF) / 0xFFFFFFFF
+    return nodeRandomInt(0, 0xffffffff) / 0xffffffff
   } else {
     throw new Error('No secure random source available')
   }
@@ -43,7 +43,7 @@ export function secureRandomInt(min: number, max: number): number {
     if (range <= 0) throw new Error('Invalid range')
     const array = new Uint32Array(1)
     window.crypto.getRandomValues(array)
-    return min + Math.floor(array[0] / (0xFFFFFFFF + 1) * range)
+    return min + Math.floor((array[0] / (0xffffffff + 1)) * range)
   } else if (nodeRandomInt) {
     // Node.js
     return nodeRandomInt(min, max)

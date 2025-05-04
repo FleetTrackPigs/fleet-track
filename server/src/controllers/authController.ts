@@ -3,6 +3,7 @@ import { supabase } from '../config/supabase'
 import { LoginRequest, LoginResponse, RegisterRequest } from '../types/auth'
 import logger from '../utils/logger'
 import crypto from 'crypto'
+import bcrypt from 'bcrypt'
 
 export const login = async (
   req: Request<object, object, LoginRequest>,
@@ -22,14 +23,19 @@ export const login = async (
       return res.status(401).json({ message: 'Invalid credentials' })
     }
 
-    // Check if passwords match
-    if (userData.password !== password) {
-      return res.status(401).json({ message: 'Invalid credentials' })
-    }
-
     // Check if user is active
     if (userData.status !== 'active') {
       return res.status(403).json({ message: 'Account is inactive' })
+    }
+
+    // Compare hashed password
+    const pepper = process.env.PASSWORD_PEPPER || ''
+    const passwordMatch = await bcrypt.compare(
+      password + pepper,
+      userData.password
+    )
+    if (!passwordMatch) {
+      return res.status(401).json({ message: 'Invalid credentials' })
     }
 
     // Create response (in a real app, you would generate a JWT token here)
@@ -42,7 +48,6 @@ export const login = async (
         lastName: userData.lastName,
         username: userData.username,
         email: userData.email,
-        password: userData.password,
         role: userData.role,
         status: userData.status
       },
@@ -100,14 +105,19 @@ export const register = async (
       // Generate a unique ID
       const userId = crypto.randomUUID()
 
-      // Log what we're about to insert
+      // Hash password with salt and pepper
+      const pepper = process.env.PASSWORD_PEPPER || ''
+      const saltRounds = 12
+      const hashedPassword = await bcrypt.hash(password + pepper, saltRounds)
+
+      // Log what we're about to insert (never log plaintext password)
       console.log('Inserting user:', {
         id: userId,
         name,
         lastName,
         username,
         email,
-        password: 'HIDDEN',
+        password: '[HASHED]',
         role,
         status: 'active'
       })
@@ -119,7 +129,7 @@ export const register = async (
         lastName,
         username,
         email,
-        password,
+        password: hashedPassword,
         role,
         status: 'active'
       })
@@ -141,7 +151,6 @@ export const register = async (
           lastName,
           username,
           email,
-          password,
           role,
           status: 'active'
         }
