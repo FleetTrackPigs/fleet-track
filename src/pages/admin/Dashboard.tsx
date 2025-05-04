@@ -15,12 +15,9 @@ import {
   Truck,
   ArrowRightLeft,
   Map,
-  Fuel,
   AlertTriangle,
   MapPin,
   BarChart3,
-  Car,
-  User,
   Wrench,
   CheckCircle2
 } from 'lucide-react'
@@ -29,7 +26,7 @@ import { Progress } from '@/components/ui/progress'
 import { useEffect, useState } from 'react'
 import { vehicleReviewsApi } from '@/services/api'
 import { Link } from 'react-router-dom'
-import { VehicleStatusBadge } from '@/components/fleet/VehicleStatusBadge'
+import { secureRandom, secureRandomInt } from '@/lib/utils'
 
 type MaintenanceVehicle = {
   vehicle_id: string
@@ -66,19 +63,19 @@ const AdminDashboard = () => {
     const cities = [
       {
         name: 'Madrid',
-        count: Math.floor(Math.random() * assignedVehicles * 0.5) + 1
+        count: Math.floor(secureRandom() * assignedVehicles * 0.5) + 1
       },
       {
         name: 'Barcelona',
-        count: Math.floor(Math.random() * assignedVehicles * 0.4) + 1
+        count: Math.floor(secureRandom() * assignedVehicles * 0.4) + 1
       },
       {
         name: 'Valencia',
-        count: Math.floor(Math.random() * assignedVehicles * 0.3) + 1
+        count: Math.floor(secureRandom() * assignedVehicles * 0.3) + 1
       },
       {
         name: 'Sevilla',
-        count: Math.floor(Math.random() * assignedVehicles * 0.2) + 1
+        count: Math.floor(secureRandom() * assignedVehicles * 0.2) + 1
       }
     ]
     // Ensure the total doesn't exceed the number of vehicles
@@ -99,9 +96,9 @@ const AdminDashboard = () => {
   const dailyMetrics = {
     activeVehicles: Math.min(
       assignedVehicles,
-      Math.floor(Math.random() * assignedVehicles + 1)
+      Math.floor(secureRandom() * assignedVehicles + 1)
     ),
-    totalDistance: Math.floor(Math.random() * 1000) + 4000 // total km today
+    totalDistance: secureRandomInt(4000, 5000) // total km today
   }
 
   // Fetch vehicles requiring maintenance
@@ -344,8 +341,8 @@ const AdminDashboard = () => {
 
                       {/* Vehicle dots */}
                       {Array.from({ length: assignedVehicles }).map((_, i) => {
-                        const x = 100 + Math.random() * 600
-                        const y = 100 + Math.random() * 200
+                        const x = 100 + secureRandom() * 600
+                        const y = 100 + secureRandom() * 200
                         return (
                           <g key={i}>
                             <circle

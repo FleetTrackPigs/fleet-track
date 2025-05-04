@@ -21,6 +21,7 @@ import {
 import { Vehicle } from '@/types/fleet'
 import { Button } from '@/components/ui/button'
 import 'leaflet/dist/leaflet.css'
+import { secureRandom, secureRandomInt } from '@/lib/utils'
 
 // Create custom icons for vehicles
 const createVehicleIcon = (status: 'available' | 'assigned') => {
@@ -65,20 +66,20 @@ const generateRandomSpainLocation = () => {
   ]
 
   // 70% chance to be near a city
-  if (Math.random() < 0.7) {
-    const city = cities[Math.floor(Math.random() * cities.length)]
+  if (secureRandom() < 0.7) {
+    const city = cities[secureRandomInt(0, cities.length)]
     // Add some randomness around the city
     return {
-      lat: city.lat + (Math.random() * 0.4 - 0.2),
-      lng: city.lng + (Math.random() * 0.4 - 0.2),
+      lat: city.lat + (secureRandom() * 0.4 - 0.2),
+      lng: city.lng + (secureRandom() * 0.4 - 0.2),
       nearCity: city.name
     }
   }
 
   // Otherwise, random location in Spain
   return {
-    lat: minLat + Math.random() * (maxLat - minLat),
-    lng: minLng + Math.random() * (maxLng - minLng),
+    lat: minLat + secureRandom() * (maxLat - minLat),
+    lng: minLng + secureRandom() * (maxLng - minLng),
     nearCity: 'Rural'
   }
 }
@@ -103,7 +104,7 @@ const generateRoute = (
 
     // Add some randomness to make the route look like roads
     const randomFactor = Math.min(0.05, Math.abs(endLat - startLat) * 0.2)
-    const jitter = Math.random() * randomFactor * 2 - randomFactor
+    const jitter = secureRandom() * randomFactor * 2 - randomFactor
 
     points.push([lat + jitter, lng + jitter])
   }
@@ -120,16 +121,16 @@ const generateVehicleTelemetry = (vehicle: Vehicle) => {
     vehicle.brand.toLowerCase().includes('iveco')
 
   return {
-    speed: Math.floor(Math.random() * (isTruck ? 30 : 60) + 20), // km/h
-    fuel: Math.floor(Math.random() * 80 + 20), // percentage
-    odometer: Math.floor(Math.random() * 100000 + 5000), // km
-    engineTemp: Math.floor(Math.random() * 40 + 60), // Celsius
-    lastMaintenance: Math.floor(Math.random() * 90 + 10), // days ago
+    speed: secureRandomInt(20, isTruck ? 50 : 80), // km/h
+    fuel: secureRandomInt(20, 100), // percentage
+    odometer: secureRandomInt(5000, 105000), // km
+    engineTemp: secureRandomInt(60, 100), // Celsius
+    lastMaintenance: secureRandomInt(10, 100), // days ago
     fuelConsumption: isTruck
-      ? (Math.random() * 10 + 20).toFixed(1) // L/100km for trucks
-      : (Math.random() * 5 + 6).toFixed(1), // L/100km for cars
-    status: Math.random() > 0.9 ? 'warning' : 'normal',
-    warnings: Math.random() > 0.9 ? ['Neumáticos con baja presión'] : []
+      ? (secureRandom() * 10 + 20).toFixed(1) // L/100km for trucks
+      : (secureRandom() * 5 + 6).toFixed(1), // L/100km for cars
+    status: secureRandom() > 0.9 ? 'warning' : 'normal',
+    warnings: secureRandom() > 0.9 ? ['Neumáticos con baja presión'] : []
   }
 }
 
@@ -231,7 +232,7 @@ export const VehicleMap = () => {
                   // Randomly adjust speeds
                   speed: Math.max(
                     5,
-                    marker.telemetry.speed + (Math.random() * 10 - 5)
+                    marker.telemetry.speed + (secureRandom() * 10 - 5)
                   )
                 },
                 lastUpdated: new Date()
@@ -252,7 +253,7 @@ export const VehicleMap = () => {
                 route: newRoute,
                 telemetry: {
                   ...marker.telemetry,
-                  fuel: Math.max(5, marker.telemetry.fuel - Math.random() * 5)
+                  fuel: Math.max(5, marker.telemetry.fuel - secureRandom() * 5)
                 },
                 lastUpdated: new Date()
               }
@@ -260,12 +261,12 @@ export const VehicleMap = () => {
           }
 
           // Unassigned vehicles move slightly randomly
-          if (marker.status === 'available' && Math.random() > 0.7) {
+          if (marker.status === 'available' && secureRandom() > 0.7) {
             return {
               ...marker,
               position: {
-                lat: marker.position.lat + (Math.random() * 0.02 - 0.01),
-                lng: marker.position.lng + (Math.random() * 0.02 - 0.01),
+                lat: marker.position.lat + (secureRandom() * 0.02 - 0.01),
+                lng: marker.position.lng + (secureRandom() * 0.02 - 0.01),
                 nearCity: marker.position.nearCity
               },
               lastUpdated: new Date()
@@ -305,7 +306,7 @@ export const VehicleMap = () => {
           center={centerPosition}
           zoom={6}
           style={{ height: '100%', width: '100%' }}
-          whenCreated={map => {
+          whenReady={map => {
             mapRef.current = map
           }}
         >
@@ -319,7 +320,7 @@ export const VehicleMap = () => {
             <Marker
               key={vehicle.id}
               position={[vehicle.position.lat, vehicle.position.lng]}
-              icon={createVehicleIcon(vehicle.status)}
+              icon={createVehicleIcon(vehicle.status === 'assigned' ? 'assigned' : 'available')}
               eventHandlers={{
                 click: () => handleFollowVehicle(vehicle)
               }}
@@ -476,7 +477,7 @@ export const VehicleMap = () => {
                         <span className="text-muted-foreground">
                           Distancia est.:
                         </span>
-                        <span>{Math.floor(Math.random() * 150 + 50)} km</span>
+                        <span>{secureRandomInt(50, 200)} km</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
@@ -487,7 +488,7 @@ export const VehicleMap = () => {
                             const now = new Date()
                             now.setMinutes(
                               now.getMinutes() +
-                                Math.floor(Math.random() * 120 + 30)
+                                secureRandomInt(30, 150)
                             )
                             return now.toLocaleTimeString([], {
                               hour: '2-digit',
@@ -506,8 +507,8 @@ export const VehicleMap = () => {
                     <AlertTriangle className="h-4 w-4 mr-1" /> Advertencias
                   </h4>
                   <ul className="mt-2 text-sm list-disc pl-5 text-yellow-700">
-                    {selectedVehicle.telemetry.warnings.map((warning, idx) => (
-                      <li key={idx}>{warning}</li>
+                    {selectedVehicle.telemetry.warnings.map((warning) => (
+                      <li key={warning}>{warning}</li>
                     ))}
                   </ul>
                 </div>
