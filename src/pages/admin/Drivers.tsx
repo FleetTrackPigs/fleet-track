@@ -65,7 +65,7 @@ const DriversPage = () => {
   const filteredDrivers = drivers.filter(
     driver =>
       driver.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      driver.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      driver.lastname.toLowerCase().includes(searchQuery.toLowerCase()) ||
       driver.user?.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       driver.user?.email.toLowerCase().includes(searchQuery.toLowerCase())
   )
@@ -116,7 +116,7 @@ const DriversPage = () => {
 
     setSelectedUserForPasswordReset({
       id: driver.user.id,
-      name: `${driver.name} ${driver.lastName}`
+      name: `${driver.name} ${driver.lastname}`
     })
     setIsPasswordResetModalOpen(true)
   }
@@ -200,7 +200,7 @@ const DriversPage = () => {
                     return (
                       <tr key={driver.id}>
                         <td className="font-medium">
-                          {driver.name} {driver.lastName}
+                          {driver.name} {driver.lastname}
                         </td>
                         <td>{driver.user?.username}</td>
                         <td>{driver.user?.email}</td>
@@ -246,7 +246,7 @@ const DriversPage = () => {
                                   </AlertDialogTitle>
                                   <AlertDialogDescription>
                                     Esta acción eliminará permanentemente al
-                                    conductor {driver.name} {driver.lastName}.
+                                    conductor {driver.name} {driver.lastname}.
                                     {assignedVehicle &&
                                       ' También se desasignará su vehículo actual.'}
                                   </AlertDialogDescription>
