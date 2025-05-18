@@ -8,6 +8,7 @@ import { vehiclesRouter } from './routes/vehicles'
 import { driverRouter } from './routes/driverRoutes'
 import vehicleReviewsRouter from './routes/vehicleReviewRoutes'
 import incidentRouter from './routes/incidentRoutes'
+import serviceRouter from './routes/serviceRoutes'
 import { errorHandler } from './middleware/errorHandler'
 
 // Load environment variables
@@ -37,6 +38,7 @@ app.use('/api/vehicles', vehiclesRouter)
 app.use('/api/drivers', driverRouter)
 app.use('/api/vehicle-reviews', vehicleReviewsRouter)
 app.use('/api/incidents', incidentRouter)
+app.use('/api/services', serviceRouter)
 
 // Health check endpoint
 app.get('/health', (req, res) => {

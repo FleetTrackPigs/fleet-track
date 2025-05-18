@@ -463,3 +463,101 @@ export const incidentApi = {
     return response.data
   }
 }
+
+// Service endpoints
+export const serviceApi = {
+  getAllServices: (token: string) =>
+    apiRequest('/services', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }),
+
+  getServiceById: (id: string, token: string) =>
+    apiRequest(`/services/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }),
+
+  getDriverServices: (driverId: string, token: string) =>
+    apiRequest(`/services/driver/${driverId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }),
+
+  createService: (
+    data: {
+      name: string
+      description?: string
+      driver_id?: string
+      vehicle_id?: string
+      start_address: string
+      end_address: string
+      start_lat: number
+      start_lng: number
+      end_lat: number
+      end_lng: number
+      scheduled_date?: string
+      notes?: string
+      status?: 'pending' | 'in-progress' | 'completed' | 'cancelled'
+    },
+    token: string
+  ) =>
+    apiRequest('/services', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    }),
+
+  updateService: (
+    id: string,
+    data: {
+      name?: string
+      description?: string
+      driver_id?: string | null
+      vehicle_id?: string | null
+      start_address?: string
+      end_address?: string
+      start_lat?: number
+      start_lng?: number
+      end_lat?: number
+      end_lng?: number
+      scheduled_date?: string | null
+      notes?: string | null
+      status?: 'pending' | 'in-progress' | 'completed' | 'cancelled'
+    },
+    token: string
+  ) =>
+    apiRequest(`/services/${id}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    }),
+
+  deleteService: (id: string, token: string) =>
+    apiRequest(`/services/${id}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }),
+
+  updateServiceStatus: (
+    id: string,
+    status: 'pending' | 'in-progress' | 'completed' | 'cancelled',
+    token: string
+  ) =>
+    apiRequest(`/services/${id}/status`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ status })
+    })
+}

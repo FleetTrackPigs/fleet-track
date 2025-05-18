@@ -11,9 +11,11 @@ import Login from './pages/Login'
 import NotFound from './pages/NotFound'
 import Profile from './pages/Profile'
 import DriverDashboard from './pages/driver/Dashboard'
+import DriverServices from './pages/driver/Services'
 import AdminDashboard from './pages/admin/Dashboard'
 import DriversPage from './pages/admin/Drivers'
 import VehiclesPage from './pages/admin/Vehicles'
+import ServicesPage from './pages/admin/Services'
 import AssignPage from './pages/admin/Assign'
 import MapPage from './pages/admin/Map'
 import VehicleDetailPage from './pages/admin/VehicleDetail'
@@ -35,6 +37,7 @@ const App = () => (
 
               {/* Driver Routes */}
               <Route path="/driver/dashboard" element={<DriverDashboard />} />
+              <Route path="/driver/services" element={<DriverServices />} />
 
               {/* Admin Routes */}
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -44,6 +47,7 @@ const App = () => (
                 path="/admin/vehicles/:id"
                 element={<VehicleDetailPage />}
               />
+              <Route path="/admin/services" element={<ServicesPage />} />
               <Route path="/admin/assign" element={<AssignPage />} />
               <Route path="/admin/map" element={<MapPage />} />
 

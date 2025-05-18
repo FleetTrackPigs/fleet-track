@@ -56,7 +56,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   return (
     <AuthLayout requiredRole="admin">
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen overflow-hidden bg-background">
         {/* Mobile sidebar toggle button */}
         <Button
           id="sidebar-toggle"
@@ -73,7 +73,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           id="admin-sidebar"
           className={`${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } lg:translate-x-0 transition-transform duration-300 ease-in-out fixed lg:static h-full z-40`}
+          } lg:translate-x-0 transition-transform duration-300 ease-in-out fixed lg:relative lg:w-64 h-full z-40 shadow-md`}
         >
           <AdminSidebar closeSidebar={() => setSidebarOpen(false)} />
         </div>
@@ -87,8 +87,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         )}
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto transition-all duration-300 p-4 lg:p-6 w-full lg:ml-64">
-          {children}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-6 w-full lg:ml-0">
+          <div className="mx-auto container">{children}</div>
         </main>
       </div>
     </AuthLayout>

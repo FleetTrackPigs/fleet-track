@@ -258,12 +258,12 @@ const AdminDashboard = () => {
                   </span>
                 </div>
               </div>
-              <Button
+              {/* <Button
                 className="mt-4 w-full"
                 onClick={() => navigate('/admin/assign')}
               >
                 Gestionar asignaciones
-              </Button>
+              </Button> */}
             </CardContent>
           </Card>
         </div>
