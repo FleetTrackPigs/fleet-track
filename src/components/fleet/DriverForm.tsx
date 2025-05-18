@@ -31,9 +31,9 @@ export function DriverForm({ driver, onSave }: DriverFormProps) {
   const [isLoadingUsers, setIsLoadingUsers] = useState(false)
 
   const [formData, setFormData] = useState({
-    userId: driver?.userId || '',
+    userId: driver?.userid || '',
     name: driver?.name || '',
-    lastName: driver?.lastName || '',
+    lastname: driver?.lastname || '',
     phone: driver?.phone || '',
     license_type: driver?.license_type || '',
     license_expiry: driver?.license_expiry || '',
@@ -43,7 +43,7 @@ export function DriverForm({ driver, onSave }: DriverFormProps) {
   const [errors, setErrors] = useState({
     userId: '',
     name: '',
-    lastName: ''
+    lastname: ''
   })
 
   // Load available users with driver role who don't already have a driver profile
@@ -102,7 +102,7 @@ export function DriverForm({ driver, onSave }: DriverFormProps) {
   const handleUserChange = (value: string) => {
     setFormData(prev => ({ ...prev, userId: value }))
 
-    // Find selected user to auto-fill name and lastName if available
+    // Find selected user to auto-fill name and lastname if available
     const selectedUser = availableUsers.find(user => user.id === value)
     if (selectedUser) {
       const nameParts = selectedUser.username.split('.')
@@ -112,7 +112,7 @@ export function DriverForm({ driver, onSave }: DriverFormProps) {
           ...prev,
           userId: value,
           name: nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1),
-          lastName: nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1)
+          lastname: nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1)
         }))
       }
     }
@@ -125,7 +125,7 @@ export function DriverForm({ driver, onSave }: DriverFormProps) {
     const newErrors = {
       userId: formData.userId ? '' : 'Debe seleccionar un usuario',
       name: formData.name ? '' : 'El nombre es obligatorio',
-      lastName: formData.lastName ? '' : 'Los apellidos son obligatorios'
+      lastname: formData.lastname ? '' : 'Los apellidos son obligatorios'
     }
 
     setErrors(newErrors)
@@ -140,10 +140,22 @@ export function DriverForm({ driver, onSave }: DriverFormProps) {
     if (isEditing && driver) {
       // Only update driver details
       const { userId, ...updateData } = formData
-      updateDriver(driver.id, updateData)
+      updateDriver(driver.id, {
+        ...updateData,
+        // Convert lastname to lastName for API
+        lastName: formData.lastname
+      })
     } else {
       // Create new driver with user association
-      addDriver(formData)
+      addDriver({
+        userId: formData.userId,
+        name: formData.name,
+        lastName: formData.lastname, // Convert lowercase to uppercase for API
+        phone: formData.phone,
+        license_type: formData.license_type,
+        license_expiry: formData.license_expiry,
+        status: formData.status
+      })
     }
 
     onSave()
@@ -201,16 +213,16 @@ export function DriverForm({ driver, onSave }: DriverFormProps) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="lastName">Apellidos</Label>
+          <Label htmlFor="lastname">Apellidos</Label>
           <Input
-            id="lastName"
-            name="lastName"
+            id="lastname"
+            name="lastname"
             placeholder="Ej: Pérez"
-            value={formData.lastName}
+            value={formData.lastname}
             onChange={handleChange}
           />
-          {errors.lastName && (
-            <p className="text-xs text-red-500">{errors.lastName}</p>
+          {errors.lastname && (
+            <p className="text-xs text-red-500">{errors.lastname}</p>
           )}
         </div>
       </div>
