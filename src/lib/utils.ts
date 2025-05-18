@@ -3,11 +3,22 @@ import { twMerge } from 'tailwind-merge'
 
 // Use ES module import for Node.js crypto
 let nodeRandomInt: ((min: number, max: number) => number) | undefined
+
+// Initialize crypto if we're in Node environment (without top-level await)
 if (typeof window === 'undefined') {
-  try {
-    // @ts-ignore
-    nodeRandomInt = (await import('crypto')).randomInt
-  } catch {}
+  // Lazy-load the crypto module
+  const initNodeCrypto = () => {
+    try {
+      // Using require for Node.js environments
+      // @ts-ignore
+      const crypto = require('crypto')
+      nodeRandomInt = crypto.randomInt
+    } catch (error) {
+      // Crypto module not available, will fall back to browser implementation
+    }
+  }
+
+  initNodeCrypto()
 }
 
 export function cn(...inputs: ClassValue[]) {
@@ -29,7 +40,11 @@ export function secureRandom(): number {
     // Node.js
     return nodeRandomInt(0, 0xffffffff) / 0xffffffff
   } else {
-    throw new Error('No secure random source available')
+    // Fallback to Math.random as last resort
+    console.warn(
+      'No secure random source available, falling back to Math.random'
+    )
+    return Math.random()
   }
 }
 
@@ -48,7 +63,11 @@ export function secureRandomInt(min: number, max: number): number {
     // Node.js
     return nodeRandomInt(min, max)
   } else {
-    throw new Error('No secure random source available')
+    // Fallback to Math.random as last resort
+    console.warn(
+      'No secure random source available, falling back to Math.random'
+    )
+    return min + Math.floor(Math.random() * (max - min))
   }
 }
 
