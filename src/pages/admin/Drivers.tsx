@@ -18,9 +18,17 @@ import {
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog'
 import { Input } from '@/components/ui/input'
-import { UserPlus, Pencil, Trash, Search, RefreshCw } from 'lucide-react'
+import {
+  UserPlus,
+  Pencil,
+  Trash,
+  Search,
+  RefreshCw,
+  KeyRound
+} from 'lucide-react'
 import { Driver } from '@/types/fleet'
 import { useToast } from '@/components/ui/use-toast'
+import { PasswordResetModal } from '@/components/fleet/PasswordResetModal'
 
 const DriversPage = () => {
   const { drivers, deleteDriver, getDriverVehicle, refreshDrivers, isLoading } =
@@ -28,9 +36,16 @@ const DriversPage = () => {
   const { token } = useAuth()
   const { toast } = useToast()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isPasswordResetModalOpen, setIsPasswordResetModalOpen] =
+    useState(false)
   const [selectedDriver, setSelectedDriver] = useState<Driver | undefined>(
     undefined
   )
+  const [selectedUserForPasswordReset, setSelectedUserForPasswordReset] =
+    useState<{
+      id: string
+      name: string
+    } | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
 
   // Initial load
@@ -87,6 +102,31 @@ const DriversPage = () => {
     } catch (error) {
       console.error('Error deleting driver:', error)
     }
+  }
+
+  const handlePasswordReset = (driver: Driver) => {
+    if (!driver.user?.id) {
+      toast({
+        title: 'Error',
+        description: 'No se encontró el usuario asociado a este conductor',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setSelectedUserForPasswordReset({
+      id: driver.user.id,
+      name: `${driver.name} ${driver.lastName}`
+    })
+    setIsPasswordResetModalOpen(true)
+  }
+
+  const handlePasswordResetSuccess = () => {
+    toast({
+      title: 'Éxito',
+      description: 'La contraseña se ha restablecido correctamente',
+      variant: 'default'
+    })
   }
 
   return (
@@ -181,6 +221,14 @@ const DriversPage = () => {
                             <Button
                               variant="ghost"
                               size="icon"
+                              title="Restablecer contraseña"
+                              onClick={() => handlePasswordReset(driver)}
+                            >
+                              <KeyRound className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => handleEdit(driver)}
                             >
                               <Pencil className="h-4 w-4" />
@@ -248,6 +296,19 @@ const DriversPage = () => {
         >
           <DriverForm driver={selectedDriver} onSave={handleModalClose} />
         </ModalForm>
+
+        {selectedUserForPasswordReset && (
+          <PasswordResetModal
+            isOpen={isPasswordResetModalOpen}
+            onClose={() => {
+              setIsPasswordResetModalOpen(false)
+              setSelectedUserForPasswordReset(null)
+            }}
+            userId={selectedUserForPasswordReset.id}
+            userName={selectedUserForPasswordReset.name}
+            onSuccess={handlePasswordResetSuccess}
+          />
+        )}
       </div>
     </AdminLayout>
   )

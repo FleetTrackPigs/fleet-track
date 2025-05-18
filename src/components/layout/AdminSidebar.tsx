@@ -1,7 +1,14 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import Logo from '@/components/Logo'
-import { Users, Truck, ArrowRightLeft, LogOut, Map } from 'lucide-react'
+import {
+  Users,
+  Truck,
+  ArrowRightLeft,
+  LogOut,
+  Map,
+  UserCog
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface AdminSidebarProps {
@@ -84,6 +91,14 @@ const AdminSidebar = ({ closeSidebar }: AdminSidebarProps) => {
       </div>
 
       <div className="mt-auto px-3 py-2 border-t border-sidebar-foreground/10">
+        <Button
+          variant="ghost"
+          className="w-full justify-start gap-3 text-sidebar-foreground"
+          onClick={() => handleNavigation('/profile')}
+        >
+          <UserCog size={18} />
+          <span>Mi Perfil</span>
+        </Button>
         <Button
           variant="ghost"
           className="w-full justify-start gap-3 text-sidebar-foreground"

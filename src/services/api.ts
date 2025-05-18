@@ -64,6 +64,15 @@ export const authApi = {
       body: JSON.stringify(data)
     }),
 
+  resetPassword: (userId: string, newPassword: string, token: string) =>
+    apiRequest('/auth/reset-password', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ userId, newPassword })
+    }),
+
   logout: () =>
     apiRequest('/auth/logout', {
       method: 'POST'

@@ -4,9 +4,10 @@ import {
   logout,
   getCurrentUser,
   register,
-  getDriverUsers
+  getDriverUsers,
+  resetPassword
 } from '../controllers/authController'
-import { authenticate } from '../middleware/auth'
+import { authenticate, checkRole } from '../middleware/auth'
 import { body } from 'express-validator'
 
 const router = express.Router()
@@ -38,6 +39,22 @@ router.post(
       .withMessage('Role must be admin or driver')
   ],
   register
+)
+
+// Reset password endpoint (protected, admin only)
+router.post(
+  '/reset-password',
+  authenticate,
+  checkRole('admin'),
+  [
+    body('userId').notEmpty().withMessage('User ID is required'),
+    body('newPassword')
+      .notEmpty()
+      .withMessage('New password is required')
+      .isLength({ min: 6 })
+      .withMessage('Password must be at least 6 characters')
+  ],
+  resetPassword
 )
 
 // Logout endpoint

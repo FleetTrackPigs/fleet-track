@@ -204,6 +204,90 @@ export const getCurrentUser = async (req: Request, res: Response) => {
   }
 }
 
+// Reset user password (admin only)
+export const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { userId, newPassword } = req.body
+
+    // Validate request
+    if (!userId || !newPassword) {
+      return res.status(400).json({
+        message: 'Missing required fields',
+        details: {
+          required: ['userId', 'newPassword'],
+          received: Object.keys(req.body)
+        }
+      })
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: 'Password too short',
+        details: { minLength: 6 }
+      })
+    }
+
+    // Check if user exists
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id, username, email, role, status')
+      .eq('id', userId)
+      .single()
+
+    if (userError || !userData) {
+      return res.status(404).json({ message: 'User not found' })
+    }
+
+    // Only admin can reset other admin passwords
+    if (userData.role === 'admin' && req.user?.role !== 'admin') {
+      return res
+        .status(403)
+        .json({ message: 'Not authorized to reset admin passwords' })
+    }
+
+    // Hash the new password
+    const pepper = process.env.PASSWORD_PEPPER || ''
+    const saltRounds = 12
+    const hashedPassword = await bcrypt.hash(newPassword + pepper, saltRounds)
+
+    // Update the user's password
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({ password: hashedPassword })
+      .eq('id', userId)
+
+    if (updateError) {
+      console.error('Error updating password:', updateError)
+      return res.status(500).json({
+        message: 'Error updating password',
+        details: updateError
+      })
+    }
+
+    // Log the action (but never log the actual password)
+    logger.info(
+      `Password reset for user ${userData.username} (${userId}) by ${req.user?.username}`
+    )
+
+    // Return success response
+    return res.status(200).json({
+      message: 'Password reset successfully',
+      user: {
+        id: userData.id,
+        username: userData.username,
+        email: userData.email,
+        role: userData.role,
+        status: userData.status
+      }
+    })
+  } catch (error) {
+    console.error('Error in resetPassword:', error)
+    return res.status(500).json({
+      message: 'Internal server error during password reset'
+    })
+  }
+}
+
 // Get users with driver role who don't already have a driver profile
 export const getDriverUsers = async (req: Request, res: Response) => {
   try {

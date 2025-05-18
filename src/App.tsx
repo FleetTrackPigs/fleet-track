@@ -9,6 +9,7 @@ import { FleetProvider } from '@/contexts/FleetContext'
 // Pages
 import Login from './pages/Login'
 import NotFound from './pages/NotFound'
+import Profile from './pages/Profile'
 import DriverDashboard from './pages/driver/Dashboard'
 import AdminDashboard from './pages/admin/Dashboard'
 import DriversPage from './pages/admin/Drivers'
@@ -30,6 +31,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/profile" element={<Profile />} />
 
               {/* Driver Routes */}
               <Route path="/driver/dashboard" element={<DriverDashboard />} />
